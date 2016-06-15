@@ -1,0 +1,26 @@
+# author = {Martin Feinberg}
+# title = {The Existence and Uniqueness of Steady States for a Class of Chemical Reaction Networks}
+# journal = {Arch Rational Mech Anal}
+# year = {1995}
+# volume = {132}
+# pages = {311-370}
+#
+# example 2.1 on page 9
+#
+# The reaction 2J --> H was reversed to H --> 2J
+# such that the numbers of strong linkage classes and the deficiency
+# are as described in the text. 
+#
+# deficiency = 0
+# linkage classes = 1
+# terminal strong linkage classes = 2
+#
+R01	1 C = 1 D + 1 E
+R02	1 D + 1 E = 1 F
+R03	1 F = 1 D + 1 E
+R04	1 C = 1 A + 1 B
+R05	1 A + 1 B = 1 C
+R06	1 A + 1 B = 1 G
+R07	1 G = 1 H
+R08	1 H = 2 J
+R09	2 J = 1 G

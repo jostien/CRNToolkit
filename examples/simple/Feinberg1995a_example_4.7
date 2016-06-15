@@ -1,0 +1,31 @@
+# author = {Martin Feinberg}
+# title = {The Existence and Uniqueness of Steady States for a Class of Chemical Reaction Networks}
+# journal = {Arch Rational Mech Anal}
+# year = {1995}
+# volume = {132}
+# pages = {311-370}
+#
+# example 4.7 on page 18
+#
+# deficiency = 2
+# linkage classes = 3
+# terminal strong linkage classes = 3
+#
+R01 1 0 = 1 A
+R02 1 A = 1 0
+R03 1 A = 2 A
+R04 2 A = 1 A
+R05 1 A + 1 B = 2 C
+R06 2 C = 1 A + 1 B
+R07 2 C = 1 D
+R08 1 D = 2 C
+R09 1 D = 2 E
+R10 2 E = 1 D
+R11 2 C = 1 C + 1 E
+R12 1 C + 1 E = 2 C
+R13 1 B +1 C = 1 F
+R14 1 F = 1 B + 1 C
+R15 1 F = 1 G
+R16 1 G = 1 F
+R17 1 G = 1 B + 1 C
+R18 1 B + 1 C = 1 G
