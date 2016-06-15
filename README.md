@@ -4,6 +4,11 @@ CRNToolbox - Java toolbox for Chemical Reaction Networks
 CRNToolbox is a small, incomplete Java toolbox for Chemical Reaction
 Networks. It contains classes for handling such networks conveniently.
 
+Examples
+--------
+
+Some networks in the examples are not available yet. 
+
 Available networks
 ------------------
 
