@@ -24,8 +24,6 @@ import miscellaneous.*;
 
 import java.util.*;
 
-import deprecated.*;
-
 /**
  * 
  * @author neigenfind
@@ -166,7 +164,7 @@ public class ReactionNetwork {
 			this.linkage_classes.addEquivalenceClass(lc);		// add the resulting linkage class to the set of the linkage classes
 		}
 		
-		//this.makeStrongLinkageClasses();
+		this.makeStrongLinkageClasses();
 	}
 	
 	/**
