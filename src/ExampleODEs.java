@@ -36,6 +36,6 @@ public class ExampleODEs {
 		
 		// the result of the following can be pasted into Singular, ...
 		System.out.println(crn.toSingularODEString());
-		// ... then call groebner(I)
+		// ... then call groebner(I);
 	}
 }
