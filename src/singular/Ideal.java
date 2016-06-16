@@ -81,6 +81,7 @@ public class Ideal {
 		
 		return ret;
 	}	
+	
 	public String toSingularString(){
 		HashMap<String, String> hm = new HashMap<String, String>();
 		for (int i = 0; i < this.polynomials.size(); i++){
@@ -91,7 +92,7 @@ public class Ideal {
 				ArrayList<Variable> variable_array = monomial.getVariables();
 				for (int k = 0; k < variable_array.size(); k++){
 					Variable variable = variable_array.get(k);
-					hm.put(variable.getName(), variable.getName());
+					hm.put(variable.toString(), variable.toString());
 				}
 			}
 		}
