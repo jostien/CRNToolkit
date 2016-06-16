@@ -1,0 +1,31 @@
+# Copyright (c) 2010-2016 Jost Neigenfind  <jostie@gmx.de>,
+# Sergio Grimbs, Zoran Nikoloski
+# 
+# General model of bifunctional enzyme
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+R01   1 K + 1 Pp = 1 KPp
+R02   1 KPp = 1 K + 1 Pp
+R03   1 K + 1 P = 1 KP
+R04   1 KP = 1 K + 1 P
+R05   1 KP = 1 KPp
+R06   1 KPp = 1 KP
+R07   1 KPp = 1 KpP
+R08   1 KpP = 1 KPp
+R09   1 KpP = 1 Kp + 1 P 
+R10   1 Kp + 1 P = 1 KpP
+R11   1 Kp = 1 K
+R12   1 K = 1 Kp
