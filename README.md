@@ -1,8 +1,8 @@
-MetabolicNetworkToolbox - Java toolbox for metabolic networks
--------------------------------------------------------------
+CRNToolkit - Java toolkit for Chemical Reaction Networks
+--------------------------------------------------------
 
-MetabolicNetworkToolbox is a small, incomplete Java toolbox for
-metabolic networks. It contains classes for handling such networks
+CRNToolkit is a small, incomplete Java toolkit for Chemical
+Reaction Networks. It contains classes for handling such networks
 conveniently.
 
 A Linux-like system is recommended!
