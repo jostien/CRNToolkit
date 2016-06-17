@@ -1,0 +1,44 @@
+# Copyright (c) 2010-2016 Jost Neigenfind  <jostie@gmx.de>,
+# Sergio Grimbs, Zoran Nikoloski
+# 
+# some model of calvin cycle
+#
+# This program is free software; you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation; either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License along
+# with this program; if not, write to the Free Software Foundation, Inc.,
+# 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+R1      1 15RBP        = 2 3PG	
+R2      1 3PG          = 1 DPG	
+R3      1 DPG          = 1 G3H	
+R4      1 G3H          = 1 DHAP	
+R5      1 G3H + 1 DHAP = 1 AFP	
+R6      1 AFP          = 1 F6P	
+R7      1 F6P          = 1 AFP	
+R8      1 F6P + 1 G3H  = 1 E4P + 1 X5P	
+R9      1 DHAP + 1 E4P = 1 17SHP	
+R10     1 G3H + 1 7SHP = 1 F6P + 1 E4P	
+R11     1 17SHP        = 1 7SHP	
+R12     1 G3H + 1 7SHP = 1 R5P + 1 X5P	
+R13     1 R5P          = 1 5RP		
+R14     1 5RP          = 1 15RBP	
+R15     1 X5P          = 1 5RP	
+R16     1 F6P          = 1 G6P	
+R17     2 G6P          = 1 F6P	
+R18     1 DHAP         = 1 G3H
+R19     1 E4P + 1 X5P  = 1 F6P + 1 G3H
+R20     1 17SHP        = 1 DHAP + 1 E4P
+R21     1 F6P + 1 E4P  = 1 G3H + 1 7SHP
+R22     1 7SHP         = 1 17SHP
+R23     1 R5P + 1 X5P  = 1 G3H + 1 7SHP
+R24     1 5RP          = 1 R5P
+R25     1 5RP          = 1 X5P
