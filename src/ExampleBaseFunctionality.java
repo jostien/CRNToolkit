@@ -72,7 +72,7 @@ public class ExampleBaseFunctionality {
 		System.out.println(reaction_network.toString());
 		
 		// get number of complexes n
-		System.out.println("number of linkage complexes is " + reaction_network.getComplexes().size());
+		System.out.println("number of complexes is " + reaction_network.getComplexes().size());
 		System.out.println();
 		
 		// compute number of linkage classes l
