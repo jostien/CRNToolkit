@@ -30,15 +30,18 @@ import java.util.*;
 
 import miscellaneous.MySet;
 
-public class Partition<E> implements Comparable<Partition<E>> {
-	private MySet<EquivalenceClass<E>> equivalence_classes;	// MySet of equivalence classes
+public class Partition<E> extends MySet<EquivalenceClass<E>> {
+	/**
+	 * standard serial version UID
+	 */
+	private static final long serialVersionUID = 1L;
+	
 	protected MySet<E> basic_set;	// MySet of the overall elements in the partition
 	
 	/**
 	 * Constructor of an empty partition.
 	 */
 	public Partition(){
-		this.equivalence_classes = new MySet<EquivalenceClass<E>>();
 		this.basic_set = new MySet<E>();
 	}
 	
@@ -48,7 +51,6 @@ public class Partition<E> implements Comparable<Partition<E>> {
 	 * @throws Exception If equivalence classes overlap, an exception is thrown.
 	 */
 	public Partition(MySet<EquivalenceClass<E>> equivalence_classes) throws Exception{
-		this.equivalence_classes = equivalence_classes;
 		this.basic_set = new MySet<E>();
 		
 		Iterator<EquivalenceClass<E>> ec_iterator = equivalence_classes.iterator();
@@ -59,6 +61,8 @@ public class Partition<E> implements Comparable<Partition<E>> {
 				throw new Exception("equivalence class is not disjoint");
 			this.basic_set.union(equivalence_class);
 		}
+		
+		this.addAll(equivalence_classes);
 	}
 	
 	/**
@@ -71,7 +75,7 @@ public class Partition<E> implements Comparable<Partition<E>> {
 		if (!this.basic_set.intersection(equivalence_class).isEmpty())
 			throw new Exception("equivalence class is not disjoint");
 		
-		this.equivalence_classes.add(equivalence_class);
+		this.add(equivalence_class);
 		this.basic_set = this.basic_set.union(equivalence_class);
 	}
 	
@@ -81,7 +85,7 @@ public class Partition<E> implements Comparable<Partition<E>> {
 	 * @return MySet of equivalence classes.
 	 */
 	public MySet<EquivalenceClass<E>> getEquivalenceClasses(){
-		return this.equivalence_classes;
+		return this;
 	}
 	
 	/**
@@ -94,15 +98,6 @@ public class Partition<E> implements Comparable<Partition<E>> {
 	}
 	
 	/**
-	 * Get number of equivalence classes.
-	 * 
-	 * @return Number of equivalence classes.
-	 */
-	public int size(){
-		return this.equivalence_classes.size();
-	}
-	
-	/**
 	 * Checks if other partition is finer.
 	 * 
 	 * @param other_partition The other partition.
@@ -112,11 +107,11 @@ public class Partition<E> implements Comparable<Partition<E>> {
 	public boolean isFiner(Partition<E> other_partition) throws Exception{
 		boolean result = true;
 		if (this.getBasicSet().equals(other_partition.getBasicSet())){
-			Iterator<EquivalenceClass<E>> iter = this.equivalence_classes.iterator();
+			Iterator<EquivalenceClass<E>> iter = this.iterator();
 			while (iter.hasNext()){
 				boolean class_has_upper_class = false;
 				EquivalenceClass<E> current_class = iter.next();
-				Iterator<EquivalenceClass<E>> inner_iter = other_partition.equivalence_classes.iterator();
+				Iterator<EquivalenceClass<E>> inner_iter = other_partition.iterator();
 				while (inner_iter.hasNext()){
 					EquivalenceClass<E> inner_class = inner_iter.next();
 					if (current_class.isSubset(inner_class)){
@@ -140,9 +135,9 @@ public class Partition<E> implements Comparable<Partition<E>> {
 	 * @param element The element whose equivalence class is wanted.
 	 * @return The corresponding equivalence class.
 	 */
-	public EquivalenceClass<E> getEquivalenceClassFromMember(E element){
+	public EquivalenceClass<E> getEquivalenceClassByElement(E element){
 		EquivalenceClass<E> result = new EquivalenceClass<E>();
-		Iterator<EquivalenceClass<E>> iter = this.equivalence_classes.iterator();
+		Iterator<EquivalenceClass<E>> iter = this.iterator();
 		while (iter.hasNext()){
 			EquivalenceClass<E> current_class = iter.next();
 			if (current_class.contains(element)){
@@ -150,116 +145,5 @@ public class Partition<E> implements Comparable<Partition<E>> {
 			}
 		}		
 		return result;
-	}
-	
-	/**
-	 * EquivalenceClass to ArrayList.
-	 * 
-	 * @return ArrayList representing EquivalenceClass.
-	 */
-	public ArrayList<EquivalenceClass<E>> toArrayList(){
-		return this.equivalence_classes.toArrayList();
-	}
-	
-	/**
-	 * Remove given equivalence class from partition.
-	 * 
-	 * @param equivalence_class The equivalence class to remove.
-	 */
-	public void removeEquivalenceClass(EquivalenceClass<E> equivalence_class){
-		this.equivalence_classes.remove(equivalence_class);
-		this.basic_set.removeAll(equivalence_class);
-	}
-	
-	/**
-	 * Make readable string from partition.
-	 * 
-	 * @return String representing partition.
-	 */
-	public String toString(){
-		return this.equivalence_classes.toString();
-	}
-	
-	/**
-	 * Get iterator over equivalence classes.
-	 * 
-	 * @return Iterator over equivalence classes.
-	 */
-	public Iterator<EquivalenceClass<E>> iterator(){
-		return this.equivalence_classes.iterator();
-	}
-	
-	/**
-	 * Remove empty set from partition.
-	 */
-	public void removeEmptySet(){
-		this.equivalence_classes.removeEmptySet();
-	}
-	
-	/**
-	 * Get index of equivalence class in ArrayList.
-	 * 
-	 * @param equivalence_class Equivalence class whose index is wanted.
-	 * @return The index of this equivalence class.
-	 */
-	public int getIndex(EquivalenceClass<E> equivalence_class){
-		return this.equivalence_classes.getIndex(equivalence_class);
-	}
-	
-	/**
-	 * Get equivalence class.
-	 * 
-	 * @param equivalence_class Equivalence class which is wanted.
-	 * @return The equivalence class
-	 */
-	public EquivalenceClass<E> getEquivalenceClass(E equivalence_class){
-		Iterator<EquivalenceClass<E>> iterator = this.equivalence_classes.iterator();
-		while (iterator.hasNext()){
-			EquivalenceClass<E> equivalence_class_ = iterator.next();
-			if (equivalence_class_.contains(equivalence_class))
-				return equivalence_class_;
-		}
-		
-		return null;
-	}
-	
-	/**
-	 * Clones partition.
-	 * 
-	 * @return Clone of partition.
-	 */
-	public Partition<E> clone(){
-		Partition<E> ret = new Partition<E>();
-		
-		Iterator<EquivalenceClass<E>> ec_iterator = this.iterator();
-		while (ec_iterator.hasNext()){
-			EquivalenceClass<E> equivalence_class = new EquivalenceClass<E>();
-			equivalence_class.addAll(ec_iterator.next().clone());
-			try {
-				ret.addEquivalenceClass(equivalence_class);
-			} catch(Exception e){
-				e.printStackTrace();
-			}
-		}
-		
-		return ret;
-	}
-	
-	/**
-	 * Compares this partition with another partition
-	 * 
-	 * @return 0 if equal, -1 or 1 if unequal.
-	 */
-	public int compareTo(Partition<E> partition) {
-		return this.toString().compareTo(partition.toString());
-	}
-
-	/**
-	 * Is partition equal to another partition.
-	 * 
-	 * @return True if equal, false otherwise.
-	 */
-	public boolean equals(Object o) {
-		return this.compareTo((Partition<E>) o) == 0;
 	}
 }
