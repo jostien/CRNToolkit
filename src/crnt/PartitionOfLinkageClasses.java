@@ -25,51 +25,52 @@ import java.util.Iterator;
 import miscellaneous.MySet;
 
 public class PartitionOfLinkageClasses extends Partition<Complex>{
+	/**
+	 * standard serial version UID
+	 */
 	private static final long serialVersionUID = 1L;
 
-	// this should override the corresponding attribute from the class Partition
-	private MySet<LinkageClass> equivalenceClasses;
-
-	public PartitionOfLinkageClasses(){
-		this.equivalenceClasses = new MySet<LinkageClass>();		
+	/**
+	 * Constructor. This class is a partition of complexes.
+	 * 
+	 * @throws Exception
+	 */
+	public PartitionOfLinkageClasses() throws Exception{
+		super();
 	}
 	
-	public void addLinkageClass(LinkageClass newLinkageClass) throws Exception{
-		MySet<Complex> intersection = newLinkageClass.intersection(this.basicSet);
-		if (intersection.isEmpty()){
-			this.equivalenceClasses.add(newLinkageClass);
-			super.addEquivalenceClass(newLinkageClass);
-			// without this super call the attribute equivalenceClass would be empty
-			// if you access an instance of PartitionOfLinkageClass as a Partition
-			this.basicSet = this.basicSet.union(newLinkageClass);
-		}
-		else{			
-			throw new Exception("tritratrullallalla");
-		}				
+	/**
+	 * Add linkage class. The same as adding an equivalence class.
+	 * 
+	 * @param linkage_class The linkage class to add.
+	 * @throws Exception Throws an exception if linkage classes are not mutually exclusive.
+	 */
+	public void addLinkageClass(LinkageClass linkage_class) throws Exception{
+		super.addEquivalenceClass(linkage_class);
 	}
 	
-	public void addEquivalenceClass(LinkageClass newEquivalenceClass) throws Exception{
-		this.addLinkageClass(newEquivalenceClass);
-	}			
-			
-	
+	/**
+	 * Gets MySet of linkage classes. Must loop over equivalence classes for casting
+	 * them to class linkage class.
+	 * 
+	 * @return MySet of linkage classes.
+	 */
 	public MySet<LinkageClass> getLinkageClasses(){
-		return this.equivalenceClasses;
-	}
-
-	public int size(){
-		return equivalenceClasses.size();
+		MySet<LinkageClass> ret = new MySet<LinkageClass>();
+		Iterator<EquivalenceClass<Complex>> iter = this.iterator();
+		while (iter.hasNext())
+			ret.add((LinkageClass)iter.next());
+			
+		return ret;
 	}
 	
-	public LinkageClass getLinkageClassFromComplex(Complex member){
-		LinkageClass result = null;
-		Iterator<LinkageClass> iter = this.equivalenceClasses.iterator();
-		while (iter.hasNext()){
-			LinkageClass currentClass = iter.next();
-			if (currentClass.contains(member)){
-				result = currentClass;
-			}
-		}		
-		return result;
+	/**
+	 * Gets the linkage class of a given complex.
+	 * 
+	 * @param complex The complex whose linkage class is wanted.
+	 * @return Linkage class for given complex.
+	 */
+	public LinkageClass getLinkageClassByComplex(Complex complex){
+		return (LinkageClass)super.getEquivalenceClassByElement(complex);
 	}
 }

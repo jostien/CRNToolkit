@@ -25,47 +25,52 @@ import java.util.Iterator;
 import miscellaneous.MySet;
 
 public class PartitionOfStrongLinkageClasses extends Partition<Complex>{
-	
-	// this should override the corresponding attribute from the class Partition
-	private MySet<StrongLinkageClass> equivalenceClasses;
+	/**
+	 * standard serial version UID
+	 */
+	private static final long serialVersionUID = 1L;
 
+	/**
+	 * Constructor. This class is a partition of complexes.
+	 * 
+	 * @throws Exception
+	 */
 	public PartitionOfStrongLinkageClasses(){
-		this.equivalenceClasses = new MySet<StrongLinkageClass>();		
+		super();
 	}
 	
-	public void addStrongLinkageClass(StrongLinkageClass newLinkageClass) throws Exception{
-		MySet<Complex> intersection = newLinkageClass.intersection(this.basicSet);
-		if (intersection.isEmpty()){
-			this.equivalenceClasses.add(newLinkageClass);
-			this.basicSet = this.basicSet.union(newLinkageClass);
-		}
-		else{			
-			throw new Exception("tritratrullallalla");
-		}		
-	}
-	
-	public void addEquivalenceClass(StrongLinkageClass newEquivalenceClass) throws Exception{
-		this.addStrongLinkageClass(newEquivalenceClass);
+	/**
+	 * Add strong linkage class. The same as adding an equivalence class.
+	 * 
+	 * @param strong_linkage_class The strong linkage class to add.
+	 * @throws Exception Throws an exception if strong linkage classes are not mutually exclusive.
+	 */
+	public void addStrongLinkageClass(StrongLinkageClass strong_linkage_class) throws Exception{
+		super.addEquivalenceClass(strong_linkage_class);
 	}			
-			
 	
+	/**
+	 * Gets MySet of strong linkage classes. Must loop over equivalence classes
+	 * for casting them to class StrongLinkageClass.
+	 * 
+	 * @return MySet of strong linkage classes.
+	 */
 	public MySet<StrongLinkageClass> getStrongLinkageClasses(){
-		return this.equivalenceClasses;
-	}
-
-	public int getSize(){
-		return equivalenceClasses.size();
+		MySet<StrongLinkageClass> ret = new MySet<StrongLinkageClass>();
+		Iterator<EquivalenceClass<Complex>> iter = this.iterator();
+		while (iter.hasNext())
+			ret.add((StrongLinkageClass)iter.next());
+			
+		return ret;
 	}
 	
-	public StrongLinkageClass getStrongLinkageClassFromComplex(Complex member){
-		StrongLinkageClass result = null;
-		Iterator<StrongLinkageClass> iter = this.equivalenceClasses.iterator();
-		while (iter.hasNext()){
-			StrongLinkageClass currentClass = iter.next();
-			if (currentClass.contains(member)){
-				result = currentClass;
-			}
-		}		
-		return result;
+	/**
+	 * Gets the strong linkage class of a given complex.
+	 * 
+	 * @param complex The complex whose strong linkage class is wanted.
+	 * @return Strong linkage class for given complex.
+	 */
+	public StrongLinkageClass getStrongLinkageClassByComplex(Complex complex){
+		return (StrongLinkageClass)super.getEquivalenceClassByElement(complex);
 	}
 }
