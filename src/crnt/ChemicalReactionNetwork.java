@@ -33,11 +33,11 @@ public class ChemicalReactionNetwork extends ReactionNetwork{
 	private HashMap<Reaction, RateConstant> K;
 	private MyMatrix<Double, Reaction, Complex> Ik;
 	
-	public ChemicalReactionNetwork(){
+	public ChemicalReactionNetwork() throws Exception{
 		this.K = new HashMap<Reaction, RateConstant>();
 	}
 	
-	public ChemicalReactionNetwork(ReactionNetwork reaction_network){
+	public ChemicalReactionNetwork(ReactionNetwork reaction_network) throws Exception{
 		this.K = new HashMap<Reaction, RateConstant>();
 		
 		MySet<Reaction> reactions = reaction_network.getReactions();
