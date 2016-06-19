@@ -89,6 +89,7 @@ public class ExampleBaseFunctionality {
 		
 		// compute deficiency of reaction network \delta := n - l - q
 		System.out.println("deficiency of network is " + reaction_network.getDeficiency());
+		System.out.println();
 
 		// some additional info
 		// compute strong linkage classes
