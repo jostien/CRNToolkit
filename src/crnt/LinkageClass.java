@@ -125,7 +125,7 @@ public class LinkageClass extends EquivalenceClass<Complex>{
 		return this.strong_linkage_classes;
 	}
 	
-	public ReactionNetwork toReactionNetwork(){
+	public ReactionNetwork toReactionNetwork() throws Exception{
 		ReactionNetwork ret = new ReactionNetwork();
 		
 		MySet<Reaction> set = new MySet<Reaction>();
