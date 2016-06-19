@@ -47,7 +47,7 @@ public class ReactionNetwork {
 	/**
 	 * The constructor.
 	 */
-	public ReactionNetwork(){
+	public ReactionNetwork() throws Exception{
 		this.S = new MySet<Species>();
 		this.C = new MySet<Complex>();
 		this.R = new MySet<Reaction>();
@@ -495,8 +495,8 @@ public class ReactionNetwork {
 	
 	public boolean isTerminal(Complex complex) throws Exception{
 		boolean result = false;
-		LinkageClass lc = this.getLinkageClasses().getLinkageClassFromComplex(complex);	//get linkage class to which complex belongs
-		StrongLinkageClass slc = lc.getStrongLinkageClasses().getStrongLinkageClassFromComplex(complex); //get strong linkage class to which complex belongs
+		LinkageClass lc = this.getLinkageClasses().getLinkageClassByComplex(complex);	//get linkage class to which complex belongs
+		StrongLinkageClass slc = lc.getStrongLinkageClasses().getStrongLinkageClassByComplex(complex); //get strong linkage class to which complex belongs
 		result = slc.isTerminal();
 		return result;
 	}
@@ -602,7 +602,7 @@ public class ReactionNetwork {
 			// if only one reactions exists we set the other direction to be the same reaction
 		    // reason : simplifies programming the while loop below (SERGIO)
 			ReactionNetwork remainingLC = new ReactionNetwork();
-			LinkageClass linkageClass = this.getLinkageClasses().getLinkageClassFromComplex(c1);
+			LinkageClass linkageClass = this.getLinkageClasses().getLinkageClassByComplex(c1);
 			remainingLC.C = linkageClass.toReactionNetwork().C;
 			Iterator<Reaction> iter = linkageClass.toReactionNetwork().getReactions().iterator();
 			
