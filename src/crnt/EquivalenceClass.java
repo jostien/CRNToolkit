@@ -23,9 +23,8 @@ package crnt;
 import miscellaneous.MySet;
 
 public class EquivalenceClass<E> extends MySet<E>{
+	/**
+	 * standard serial version UID
+	 */
 	private static final long serialVersionUID = 1L;
-
-	public E getElement(){
-		return this.first();
-	}
 }
