@@ -5,7 +5,7 @@ CRNToolkit is a small, incomplete Java toolkit for Chemical
 Reaction Networks. It contains classes for handling such networks
 conveniently.
 
-A Linux-like system is recommended!
+A Linux-like system and the [eclipse](https://eclipse.org/) environment are recommended!
 
 Examples
 --------
@@ -15,24 +15,18 @@ Some networks in the examples are not available yet.
 Available networks
 ------------------
 
-- BioModels
-https://www.ebi.ac.uk/biomodels-main/
+- [BioModels](https://www.ebi.ac.uk/biomodels-main/)
 
-- BiGG
-http://bigg.ucsd.edu/
+- [BiGG](http://bigg.ucsd.edu/)
 
 
 Requirements
 ------------
 
-- Octave is mandatory for linear algebra computations!
-https://www.gnu.org/software/octave/
+- [Octave](https://www.gnu.org/software/octave/) is mandatory for linear algebra computations!
 
-- Polco for EFM computation
-http://www.csb.ethz.ch/tools/software/polco.html
+- [Polco](http://www.csb.ethz.ch/tools/software/polco.html) for EFM computation
 
-- JSBML for parsing SBML-files
-http://sbml.org/Software/JSBML
+- [JSBML](http://sbml.org/Software/JSBML) for parsing SBML-files
 
-- Singular (optional but the corresponding methods won't work)
-https://www.singular.uni-kl.de/
+- [Singular](https://www.singular.uni-kl.de/) (optional but the corresponding methods won't work)
