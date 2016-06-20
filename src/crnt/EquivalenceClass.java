@@ -27,4 +27,35 @@ public class EquivalenceClass<E> extends MySet<E>{
 	 * standard serial version UID
 	 */
 	private static final long serialVersionUID = 1L;
+	private EquivalenceRelation<E> equivalence_relation;
+	
+	public EquivalenceClass(EquivalenceRelation<E> equivalence_relation){
+		this.equivalence_relation = equivalence_relation;
+	}
+	
+	public boolean add(E e){
+		if (this.isEmpty())
+			return super.add(e);
+
+		try {
+			if (this.equivalence_relation.isEqual(this.head(), e))
+				return super.add(e);
+		} catch(Exception ex){
+		}
+		
+		return false;
+	}
+	
+	public boolean addAll(EquivalenceClass<E> equivalence_class){
+		if (this.isEmpty())
+			return super.addAll(equivalence_class);
+
+		try {
+			if (this.equivalence_relation.isEqual(this.head(), equivalence_class.head()))
+				return super.addAll(equivalence_class);
+		} catch(Exception ex){
+		}
+		
+		return false;
+	}
 }

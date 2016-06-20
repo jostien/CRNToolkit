@@ -213,6 +213,18 @@ public class Reaction implements Comparable<Object>{
 		return ret;
 	}
 	
+	public static MySet<Reaction> getReactionsConsumingComplexes(MySet<Complex> complexes, MySet<Reaction> reactions){
+		MySet<Reaction> ret = new MySet<Reaction>();
+		
+		Iterator<Complex> iterator = complexes.iterator();
+		while (iterator.hasNext()){
+			Complex complex = iterator.next();
+			ret = ret.union(Reaction.getReactionsConsumingComplex(complex, reactions));
+		}
+		
+		return ret;
+	}
+	
 	public static MySet<Reaction> getReactionsConsumingOrProducingComplex(Complex complex, MySet<Reaction> reactions){
 		MySet<Reaction> ret = new MySet<Reaction>();
 		
@@ -221,6 +233,18 @@ public class Reaction implements Comparable<Object>{
 			Reaction reaction = iterator.next();
 			if (reaction.getSubstrate().equals(complex) || reaction.getProduct().equals(complex))
 				ret.add(reaction);
+		}
+		
+		return ret;
+	}
+	
+	public static MySet<Reaction> getReactionsConsumingOrProducingComplexes(MySet<Complex> complexes, MySet<Reaction> reactions){
+		MySet<Reaction> ret = new MySet<Reaction>();
+		
+		Iterator<Complex> iterator = complexes.iterator();
+		while (iterator.hasNext()){
+			Complex complex = iterator.next();
+			ret = ret.union(Reaction.getReactionsConsumingOrProducingComplex(complex, reactions));
 		}
 		
 		return ret;

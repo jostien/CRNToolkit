@@ -36,13 +36,15 @@ public class Partition<E> extends MySet<EquivalenceClass<E>> {
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	protected MySet<E> basic_set;	// MySet of the overall elements in the partition
+	protected MySet<E> basic_set;							// MySet of the overall elements in the partition
+	private EquivalenceRelation<E> equivalence_relation;
 	
 	/**
 	 * Constructor of an empty partition.
 	 */
-	public Partition(){
+	public Partition(EquivalenceRelation<E> equivalence_relation){
 		this.basic_set = new MySet<E>();
+		this.equivalence_relation = equivalence_relation;
 	}
 	
 	/** Constructor of an partition given a set of equivalence classes.
@@ -63,6 +65,21 @@ public class Partition<E> extends MySet<EquivalenceClass<E>> {
 		}
 		
 		this.addAll(equivalence_classes);
+	}
+	
+	public void addElementToEquivalenceClasses(E e) throws Exception{
+		Iterator<EquivalenceClass<E>> iterator = this.iterator();
+		
+		boolean was_added = false;
+		while (iterator.hasNext()){
+			EquivalenceClass<E> ec = iterator.next();
+			was_added = was_added | ec.add(e);
+		}
+		if (!was_added){
+			EquivalenceClass<E> ec = new EquivalenceClass<E>(this.equivalence_relation);
+			ec.add(e);
+			this.addEquivalenceClass(ec);
+		}
 	}
 	
 	/**
@@ -136,14 +153,12 @@ public class Partition<E> extends MySet<EquivalenceClass<E>> {
 	 * @return The corresponding equivalence class.
 	 */
 	public EquivalenceClass<E> getEquivalenceClassByElement(E element){
-		EquivalenceClass<E> result = new EquivalenceClass<E>();
 		Iterator<EquivalenceClass<E>> iter = this.iterator();
 		while (iter.hasNext()){
 			EquivalenceClass<E> current_class = iter.next();
-			if (current_class.contains(element)){
-				result = current_class;
-			}
+			if (current_class.contains(element))
+				return current_class;
 		}		
-		return result;
+		return null;
 	}
 }
