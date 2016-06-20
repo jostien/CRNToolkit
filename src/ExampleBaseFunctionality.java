@@ -75,8 +75,11 @@ public class ExampleBaseFunctionality {
 		System.out.println("number of complexes is " + reaction_network.getComplexes().size());
 		System.out.println();
 		
-		// compute number of linkage classes l
+		// compute number of linkage classes l and show them
 		System.out.println("number of linkage classes is " + reaction_network.getLinkageClasses().size());
+		Iterator<EquivalenceClass<Complex>> lc_iterator = reaction_network.getLinkageClasses().iterator();
+		while (lc_iterator.hasNext())
+			System.out.println(lc_iterator.next().toString());
 		System.out.println();
 		
 		// ##############################################################
@@ -91,30 +94,18 @@ public class ExampleBaseFunctionality {
 		System.out.println("deficiency of network is " + reaction_network.getDeficiency());
 		System.out.println();
 
-		// some additional info
-		// compute strong linkage classes
-		int c = 1;
-		// the set of linkage classes is a partition of the set of complexes!
-		Partition<Complex> lcs = reaction_network.getLinkageClasses();
-		Iterator<EquivalenceClass<Complex>> lc_iterator = lcs.iterator();			// get iterator over linkage classes, 
-		while (lc_iterator.hasNext()){
-			LinkageClass lc = (LinkageClass)lc_iterator.next();						// get linkage class
-			System.out.println(c + ". linkage class is " + lc.toString());
-			System.out.println("number of complexes is " + lc.size());
-			
-			// get strong linkage classes of linkage class, which are partitions of complexes
-			Partition<Complex> slcs = lc.getStrongLinkageClasses();
-			System.out.println("number of strong linkage classes is " + slcs.size());
-			// get iterator over strong linkage classes
-			Iterator<EquivalenceClass<Complex>> slc_iterator = slcs.iterator();
-			while (slc_iterator.hasNext()){
-				StrongLinkageClass slc = (StrongLinkageClass)slc_iterator.next();	// get strong linkage class
-				System.out.println("   strong linkage class is " + lc.toString());
-				System.out.println("   number of complexes is " + slc.size());
-				System.out.println("   strong linkage class is terminal: " + slc.isTerminal());
-			}
-			System.out.println();
-			c++;
-		}
+		// compute number of strong linkage classes and show them
+		System.out.println("number of strong linkage classes is " + reaction_network.getStrongLinkageClasses().size());
+		Partition<Complex> slcs = reaction_network.getStrongLinkageClasses();
+		Iterator<EquivalenceClass<Complex>> slc_iterator = slcs.iterator();
+		while (slc_iterator.hasNext()){
+			EquivalenceClass<Complex> slc = slc_iterator.next();
+			System.out.println(slc.toString());
+			System.out.println("strong linkage class is terminal: " + reaction_network.isTerminal(slc));
+		}		
+		System.out.println();
+		
+		// is network weakly reversible?
+		System.out.println("reaction network is weakly reversible: " + reaction_network.isWeaklyReversible());
 	}
 }
