@@ -36,7 +36,7 @@ public class ReactionNetwork {
 	private MySet<Species> S;	// the set of species
 	private MySet<Complex> C;	// the set of complexes
 	private MySet<Reaction> R;	// the set of reactions
-	private PartitionOfLinkageClasses linkage_classes;	// the set of linkage classes
+	private Partition<Complex> linkage_classes;	// the set of linkage classes
 	private MyMatrix<Double, Species, Complex> Y;
 	private MyMatrix<Integer, Complex, Reaction> Ia;
 	private MyMatrix<Double, Species, Reaction> N;
@@ -51,7 +51,7 @@ public class ReactionNetwork {
 		this.S = new MySet<Species>();
 		this.C = new MySet<Complex>();
 		this.R = new MySet<Reaction>();
-		this.linkage_classes = new PartitionOfLinkageClasses();
+		this.linkage_classes = new Partition<Complex>();
 		this.compartments = new MySet<String>();
 	}
 	
@@ -112,18 +112,11 @@ public class ReactionNetwork {
 	 * 
 	 * @return The set of linkage classes.
 	 */
-	public PartitionOfLinkageClasses getLinkageClasses() throws Exception{
+	public Partition<Complex> getLinkageClasses() throws Exception{
 		if (this.linkage_classes.size() == 0)
 			this.makeLinkageClasses();
 		
 		return this.linkage_classes;
-	}
-	
-	public MySet<LinkageClass> getSetOfLinkageClasses() throws Exception{
-		if (this.linkage_classes.size() == 0)
-			this.makeLinkageClasses();
-		
-		return this.linkage_classes.getLinkageClasses();
 	}
 	
 	/**
@@ -142,9 +135,9 @@ public class ReactionNetwork {
 	}
 	
 	public void makeStrongLinkageClasses() throws Exception{
-		Iterator<LinkageClass> iterator = this.linkage_classes.getLinkageClasses().iterator();
+		Iterator<EquivalenceClass<Complex>> iterator = this.linkage_classes.iterator();
 		while (iterator.hasNext())
-			iterator.next().makeStrongLinkageClasses();
+			((LinkageClass)iterator.next()).makeStrongLinkageClasses();
 	}
 	
 	/**
@@ -153,7 +146,7 @@ public class ReactionNetwork {
 	public void makeLinkageClasses() throws Exception{
 		MySet<Complex> rest_of_complexes = this.C.clone();		// get a copy of all complexes of the network
 		MySet<Reaction> rest_of_reactions = this.R.clone();		// get a copy of all reactions of the network
-		this.linkage_classes = new PartitionOfLinkageClasses();	// this empty set will later on consist of the linkage classes
+		this.linkage_classes = new Partition<Complex>();		// this empty set will later on consist of the linkage classes
 		
 		while (rest_of_complexes.size() > 0){					// as long as there exist complexes which are not element of a linkage class
 			Complex head_of_rest = rest_of_complexes.head();	// get the first of these complexes which is the seed of a new linkage class
@@ -495,18 +488,18 @@ public class ReactionNetwork {
 	
 	public boolean isTerminal(Complex complex) throws Exception{
 		boolean result = false;
-		LinkageClass lc = this.getLinkageClasses().getLinkageClassByComplex(complex);	//get linkage class to which complex belongs
-		StrongLinkageClass slc = lc.getStrongLinkageClasses().getStrongLinkageClassByComplex(complex); //get strong linkage class to which complex belongs
+		LinkageClass lc = (LinkageClass)this.getLinkageClasses().getEquivalenceClassByElement(complex);						//get linkage class to which complex belongs
+		StrongLinkageClass slc = (StrongLinkageClass)lc.getStrongLinkageClasses().getEquivalenceClassByElement(complex); 	//get strong linkage class to which complex belongs
 		result = slc.isTerminal();
 		return result;
 	}
 		
 	public boolean isWeaklyReversible() throws Exception{
 		boolean result = true;
-		Iterator<LinkageClass> iter = this.getLinkageClasses().getLinkageClasses().iterator();
+		Iterator<EquivalenceClass<Complex>> iter = this.getLinkageClasses().getEquivalenceClasses().iterator();
 		while (iter.hasNext()){
-			LinkageClass currentLC = iter.next();
-			if (currentLC.getSetOfStrongLinkageClasses().size()>1){
+			LinkageClass current_lc = (LinkageClass)iter.next();
+			if (current_lc.getStrongLinkageClasses().size()>1){
 				result = false;  //if one linkage class contains more than one strong linkage class
 								 //the network is not weakly reversible
 			}
@@ -591,28 +584,28 @@ public class ReactionNetwork {
 			result = false;
 		}
 		else{
-			Reaction forwardReaction = getReactionBetweenComplexes(c1, c2);
-			Reaction backwardReaction = getReactionBetweenComplexes(c2, c1);
-			if (forwardReaction == null){
-				forwardReaction = backwardReaction;
+			Reaction forward_reaction = getReactionBetweenComplexes(c1, c2);
+			Reaction backward_reaction = getReactionBetweenComplexes(c2, c1);
+			if (forward_reaction == null){
+				forward_reaction = backward_reaction;
 			}
-			else if (backwardReaction == null){
-				backwardReaction = forwardReaction;
+			else if (backward_reaction == null){
+				backward_reaction = forward_reaction;
 			}
 			// if only one reactions exists we set the other direction to be the same reaction
 		    // reason : simplifies programming the while loop below (SERGIO)
-			ReactionNetwork remainingLC = new ReactionNetwork();
-			LinkageClass linkageClass = this.getLinkageClasses().getLinkageClassByComplex(c1);
-			remainingLC.C = linkageClass.toReactionNetwork().C;
-			Iterator<Reaction> iter = linkageClass.toReactionNetwork().getReactions().iterator();
+			ReactionNetwork remaining_lc = new ReactionNetwork();
+			LinkageClass linkage_class = (LinkageClass)this.getLinkageClasses().getEquivalenceClassByElement(c1);
+			remaining_lc.C = linkage_class.toReactionNetwork().C;
+			Iterator<Reaction> iter = linkage_class.toReactionNetwork().getReactions().iterator();
 			
 			while (iter.hasNext()){
-				Reaction currentReaction = iter.next();
-				if (!currentReaction.equals(forwardReaction) && !currentReaction.equals(backwardReaction)){
-					remainingLC.addReaction(currentReaction);
+				Reaction current_reaction = iter.next();
+				if (!current_reaction.equals(forward_reaction) && !current_reaction.equals(backward_reaction)){
+					remaining_lc.addReaction(current_reaction);
 				}
 			}
-			if (remainingLC.getLinkageClasses().size()>1){
+			if (remaining_lc.getLinkageClasses().size()>1){
 				result = true;
 			}
 			else{
@@ -627,20 +620,20 @@ public class ReactionNetwork {
 		if (this.linkage_classes==null){
 			this.makeLinkageClasses();
 		}
-		Iterator<LinkageClass> iteratorLC = this.linkage_classes.getLinkageClasses().iterator();
-		while (iteratorLC.hasNext()){			
-			LinkageClass currentLC = iteratorLC.next();
-			if (currentLC.getStrongLinkageClasses()==null){
-				currentLC.makeStrongLinkageClasses();
+		Iterator<EquivalenceClass<Complex>> iterator_lc = this.getLinkageClasses().iterator();
+		while (iterator_lc.hasNext()){			
+			LinkageClass current_lc = (LinkageClass)iterator_lc.next();
+			if (current_lc.getStrongLinkageClasses()==null){
+				current_lc.makeStrongLinkageClasses();
 			}
-			Iterator<StrongLinkageClass> iteratorSLC = currentLC.getSetOfStrongLinkageClasses().iterator();
-			while (iteratorSLC.hasNext()){
-				StrongLinkageClass currentSLC = iteratorSLC.next();
-				if (currentSLC.isTerminal()){									
-					Iterator<Complex> iteratorComplex = currentSLC.iterator();
+			Iterator<EquivalenceClass<Complex>> iterator_slc = current_lc.getStrongLinkageClasses().iterator();
+			while (iterator_slc.hasNext()){
+				StrongLinkageClass current_slc = (StrongLinkageClass)iterator_slc.next();
+				if (current_slc.isTerminal()){									
+					Iterator<Complex> iteratorComplex = current_slc.iterator();
 					while (iteratorComplex.hasNext()){
 						Complex c1 = iteratorComplex.next();												
-						Iterator<Complex> iteratorSecondComplex = currentSLC.iterator();
+						Iterator<Complex> iteratorSecondComplex = current_slc.iterator();
 						while (iteratorSecondComplex.hasNext()){
 							Complex c2 = iteratorSecondComplex.next();
 							if (!c1.equals(c2)){
@@ -665,17 +658,17 @@ public class ReactionNetwork {
 		if (this.linkage_classes==null){
 			this.makeLinkageClasses();
 		}
-		Iterator<LinkageClass> iteratorLC = this.linkage_classes.getLinkageClasses().iterator();
-		while (iteratorLC.hasNext()){			
-			LinkageClass currentLC = iteratorLC.next();
-			if (currentLC.getStrongLinkageClasses()==null){
-				currentLC.makeStrongLinkageClasses();
+		Iterator<EquivalenceClass<Complex>> iterator_lc = this.getLinkageClasses().iterator();
+		while (iterator_lc.hasNext()){			
+			LinkageClass current_lc = (LinkageClass)iterator_lc.next();
+			if (current_lc.getStrongLinkageClasses()==null){
+				current_lc.makeStrongLinkageClasses();
 			}
-			Iterator<StrongLinkageClass> iteratorSLC = currentLC.getSetOfStrongLinkageClasses().iterator();
+			Iterator<EquivalenceClass<Complex>> iterator_slc = current_lc.getStrongLinkageClasses().iterator();
 			Integer count = 0;
-			while (iteratorSLC.hasNext()){				
-				StrongLinkageClass currentSLC = iteratorSLC.next();					
-				if (currentSLC.isTerminal()){
+			while (iterator_slc.hasNext()){				
+				StrongLinkageClass current_slc = (StrongLinkageClass)iterator_slc.next();					
+				if (current_slc.isTerminal()){
 					count = count +1 ;
 				}
 			}	

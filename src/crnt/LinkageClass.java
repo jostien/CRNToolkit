@@ -36,8 +36,8 @@ public class LinkageClass extends EquivalenceClass<Complex>{
 	 */
 	private static final long serialVersionUID = 1L;
 	
-	private MySet<Reaction> reactions;							// consists in the moment of the reactions of the corresponding reaction network
-	private PartitionOfStrongLinkageClasses strong_linkage_classes;	// a list of the strong linkage classes
+	private MySet<Reaction> reactions;					// consists in the moment of the reactions of the corresponding reaction network
+	private Partition<Complex> strong_linkage_classes;	// a list of the strong linkage classes
 	
 	/**
 	 * The constructor.
@@ -53,9 +53,9 @@ public class LinkageClass extends EquivalenceClass<Complex>{
 	 */
 	public void makeStrongLinkageClasses() throws Exception{
 		if (this.size() > 0){	// is this object non empty
-			this.strong_linkage_classes = new PartitionOfStrongLinkageClasses();	// make a new empty set for the strong linkage classes
-			ArrayList<Complex> array = this.toArrayList();					// get all the complexes of this linkage class in form of an array
-			boolean[] touched = new boolean[array.size()];					// make an array which is used for marking complexes which were already found to be a member of a strong linkage class
+			this.strong_linkage_classes = new Partition<Complex>();	// make a new empty set for the strong linkage classes
+			ArrayList<Complex> array = this.toArrayList();			// get all the complexes of this linkage class in form of an array
+			boolean[] touched = new boolean[array.size()];			// make an array which is used for marking complexes which were already found to be a member of a strong linkage class
 			
 			// test all pairs of complexes if they are member of the same strong linkage class
 			for (int i = 0; i < array.size(); i++){
@@ -77,7 +77,7 @@ public class LinkageClass extends EquivalenceClass<Complex>{
 							touched[j] = true;						// mark this complex as a member of a strong linkage class
 						}
 					}
-					this.strong_linkage_classes.addStrongLinkageClass(strong_linkage_class);	// add the strong linkage class to the corresponding list
+					this.strong_linkage_classes.addEquivalenceClass(strong_linkage_class);	// add the strong linkage class to the corresponding list
 				}
 			}
 		}
@@ -117,11 +117,7 @@ public class LinkageClass extends EquivalenceClass<Complex>{
 	 * 
 	 * @return The set of strong linkage classes.
 	 */
-	public MySet<StrongLinkageClass> getSetOfStrongLinkageClasses(){
-		return this.strong_linkage_classes.getStrongLinkageClasses();
-	}
-	
-	public PartitionOfStrongLinkageClasses getStrongLinkageClasses(){
+	public Partition<Complex> getStrongLinkageClasses(){
 		return this.strong_linkage_classes;
 	}
 	
