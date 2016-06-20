@@ -94,20 +94,21 @@ public class ExampleBaseFunctionality {
 		// some additional info
 		// compute strong linkage classes
 		int c = 1;
-		// get iterator over linkage classes
-		Iterator<LinkageClass> lc_iterator = reaction_network.getLinkageClasses().getLinkageClasses().iterator();
+		// the set of linkage classes is a partition of the set of complexes!
+		Partition<Complex> lcs = reaction_network.getLinkageClasses();
+		Iterator<EquivalenceClass<Complex>> lc_iterator = lcs.iterator();			// get iterator over linkage classes, 
 		while (lc_iterator.hasNext()){
-			LinkageClass lc = lc_iterator.next();	// get linkage class
+			LinkageClass lc = (LinkageClass)lc_iterator.next();						// get linkage class
 			System.out.println(c + ". linkage class is " + lc.toString());
 			System.out.println("number of complexes is " + lc.size());
 			
-			// get strong linkage classes of linkage class
-			MySet<StrongLinkageClass> slcs = lc.getStrongLinkageClasses().getStrongLinkageClasses();
+			// get strong linkage classes of linkage class, which are partitions of complexes
+			Partition<Complex> slcs = lc.getStrongLinkageClasses();
 			System.out.println("number of strong linkage classes is " + slcs.size());
 			// get iterator over strong linkage classes
-			Iterator<StrongLinkageClass> slc_iterator = slcs.iterator();
+			Iterator<EquivalenceClass<Complex>> slc_iterator = slcs.iterator();
 			while (slc_iterator.hasNext()){
-				StrongLinkageClass slc = slc_iterator.next();	// get strong linkage class
+				StrongLinkageClass slc = (StrongLinkageClass)slc_iterator.next();	// get strong linkage class
 				System.out.println("   strong linkage class is " + lc.toString());
 				System.out.println("   number of complexes is " + slc.size());
 				System.out.println("   strong linkage class is terminal: " + slc.isTerminal());
