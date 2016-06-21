@@ -1,7 +1,7 @@
-/* CRNToolbox, Copyright (c) 2010-2016 Jost Neigenfind  <jostie@gmx.de>,
+/* CRNToolkit, Copyright (c) 2010-2016 Jost Neigenfind  <jostie@gmx.de>,
  * Sergio Grimbs, Zoran Nikoloski
  * 
- * A Java toolbox for Chemical Reaction Networks
+ * A Java toolkit for Chemical Reaction Networks
  *
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -17,7 +17,6 @@
  * with this program; if not, write to the Free Software Foundation, Inc.,
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
-
 package system.parsers.sbml;
 
 import org.sbml.jsbml.*;
