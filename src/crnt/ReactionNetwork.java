@@ -812,7 +812,10 @@ public class ReactionNetwork{
 	 * @return The set of reactions consuming the complex.
 	 */
 	public MySet<Reaction> getReactionsConsumingComplex(Complex complex){
-		return this.substrate_reaction_map.get(complex.toString());
+		if (this.substrate_reaction_map.containsKey(complex.toString()))
+			return this.substrate_reaction_map.get(complex.toString());
+		
+		return new MySet<Reaction>();
 	}
 	
 	/**
@@ -840,7 +843,11 @@ public class ReactionNetwork{
 	 * @return The set of reactions consuming or producing the given complex.
 	 */
 	public MySet<Reaction> getReactionsConsumingOrProducingComplex(Complex complex){
-		return this.substrate_reaction_map.get(complex.toString()).union(this.product_reaction_map.get(complex.toString()));
+		MySet<Reaction> ret = this.substrate_reaction_map.get(complex.toString()).union(this.product_reaction_map.get(complex.toString()));
+		if (ret == null)
+			return new MySet<Reaction>();
+		
+		return ret;
 	}
 	
 	/**
@@ -868,7 +875,10 @@ public class ReactionNetwork{
 	 * @return Set of directed neighbours of the given complex.
 	 */
 	public MySet<Complex> getComplexNeighboursForward(Complex complex){
-		return this.directed_neighbours.get(complex.toString());
+		if (this.directed_neighbours.containsKey(complex.toString()))
+			return this.directed_neighbours.get(complex.toString());
+		
+		return new MySet<Complex>();
 	}
 	
 	/**
@@ -878,6 +888,9 @@ public class ReactionNetwork{
 	 * @return Set of undirected neighbours of the given complex.
 	 */
 	public MySet<Complex> getComplexNeighboursForwardBackward(Complex complex){
-		return this.undirected_neighbours.get(complex.toString());
+		if (this.undirected_neighbours.containsKey(complex.toString()))
+			return this.undirected_neighbours.get(complex.toString());
+		
+		return new MySet<Complex>();
 	}
 }
