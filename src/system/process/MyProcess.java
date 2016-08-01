@@ -31,6 +31,7 @@ public class MyProcess extends MyProgram{
 	
 	public MyProcess(){
 		this.regexp = new MyRegexp();
+		this.regex = "";
 	}
 	
 	public void run() throws Exception{
