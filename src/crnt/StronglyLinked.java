@@ -87,37 +87,29 @@ public class StronglyLinked implements EquivalenceRelation<Complex>{
 	 * Calculates the linkage class recursively using method depthFirstSearch.
 	 */
 	public MySet<Complex> makeStrongLinkageClass(Complex c1) throws Exception{
-		MySet<Complex> rest_of_complexes = this.reaction_network.getComplexes().clone();	// get a copy of all complexes of the network
-		MySet<Reaction> rest_of_reactions = this.reaction_network.getReactions().clone();	// get a copy of all reactions of the network
-		MySet<Complex> ret = new MySet<Complex>();											// this empty set will later on consist of the linkage class
-		
-		rest_of_complexes.remove(c1);														// remove this complex from this set
-			
-		this.depthFirstSearch(c1, ret, rest_of_complexes, rest_of_reactions);				// find all complexes that can be reached from this complex
+		MySet<Complex> ret = new MySet<Complex>();	// this empty set will later on consist of the linkage class
+		this.depthFirstSearch(c1, ret);				// find all complexes that can be reached from this complex
 		
 		return ret;
 	}
 	
 	/**
-	 * Walks recursively along the edges of the hypergraph of the given metabolic network.
+	 * Walks recursively along the directed edges of the graph of the given reaction network.
 	 * 
 	 * @param complex The current complex which is to be analyzed.
-	 * @param lc The current set of complexes which are members of the current linkage class.
-	 * @param rest The set of complexes which were not yet touched
+	 * @param ret The already touched nodes.
 	 */
-	public void depthFirstSearch(Complex complex, MySet<Complex> ret, MySet<Complex> rest_of_complexes, MySet<Reaction> rest_of_reactions){
+	public void depthFirstSearch(Complex complex, MySet<Complex> ret){
 		ret.add(complex);
 		
-		// get all the neighbours of this reaction
-		MySet<Complex> neighbours = Reaction.getComplexNeighboursForward(complex, rest_of_complexes, rest_of_reactions);
-		rest_of_complexes.removeAll(neighbours);			// remove these complexes from the set of untouched complexes
-		
+		// get all untouched neighbours of this reaction
+		MySet<Complex> neighbours = this.reaction_network.getComplexNeighboursForward(complex).difference(ret);
 		while (neighbours.size() > 0){						// as long as there is a neighbour which was not yet touched
 			Complex head_of_neighbours = neighbours.head();	// get the first neighbour
 			neighbours.remove(head_of_neighbours);			// remove it from the neighbours list
 		
-			// walk along the edges of the hypergraph
-			depthFirstSearch(head_of_neighbours, ret, rest_of_complexes, rest_of_reactions);
+			// walk along the edges of the graph
+			depthFirstSearch(head_of_neighbours, ret);
 		}
 	}
 }
