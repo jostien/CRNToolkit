@@ -22,6 +22,7 @@ package crnt;
 
 import java.util.HashMap;
 import java.util.Iterator;
+import java.util.LinkedList;
 import miscellaneous.MySet;
 
 public class Linked implements EquivalenceRelation<Complex>{
@@ -91,5 +92,34 @@ public class Linked implements EquivalenceRelation<Complex>{
 			// walk along the edges of the graph
 			depthFirstSearch(head_of_neighbours, ret);
 		}
+	}
+	
+	public int shortestPath(Complex complex1, Complex complex2){
+		MySet<Complex> touched = new MySet<Complex>();
+		
+		LinkedList<Complex> queue = new LinkedList<Complex>();
+		LinkedList<Integer> depth = new LinkedList<Integer>();
+		
+		queue.add(complex1);
+		depth.add(0);
+		while (queue.size() > 0){							// as long as there is a neighbour which was not yet touched
+			Complex head_of_queue = queue.get(0);			// get the first element in queue
+			queue.remove(0);								// remove first element
+			int head_of_depth = depth.get(0);
+			depth.remove(0);
+			
+			touched.add(head_of_queue);
+			
+			MySet<Complex> neighbours = this.reaction_network.getComplexNeighboursForwardBackward(head_of_queue).difference(touched);
+		
+			if (neighbours.contains(complex2))
+				return head_of_depth + 1;
+			
+			queue.addAll(neighbours);
+			for (int i = 0; i < neighbours.size(); i++)
+				depth.add(head_of_depth + 1);
+		}
+		
+		return -1;
 	}
 }
