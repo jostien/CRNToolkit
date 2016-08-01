@@ -45,6 +45,12 @@ public class ReactionNetwork{
 	private MyMatrix<Integer, Complex, EquivalenceClass<Complex>> L;
 	private MySet<String> compartments;
 	
+	private HashMap<String, MySet<Reaction>> substrate_reaction_map;// lookup table for reactions consuming complex
+	private HashMap<String, MySet<Reaction>> product_reaction_map;	// lookup table for reactions producing complex
+	
+	private HashMap<String, MySet<Complex>> directed_neighbours;	// lookup table for directed neighbours of complex
+	private HashMap<String, MySet<Complex>> undirected_neighbours;	// lookup table for undirected neighbours of complex
+	
 	/**
 	 * The constructor.
 	 */
@@ -55,6 +61,12 @@ public class ReactionNetwork{
 		this.linkage_classes = new Partition<Complex>(new Linked(this));
 		this.strong_linkage_classes = new Partition<Complex>(new StronglyLinked(this));
 		this.compartments = new MySet<String>();
+		
+		this.substrate_reaction_map = new HashMap<String, MySet<Reaction>>();
+		this.product_reaction_map = new HashMap<String, MySet<Reaction>>();
+		
+		this.directed_neighbours = new HashMap<String, MySet<Complex>>();
+		this.undirected_neighbours = new HashMap<String, MySet<Complex>>();
 	}
 	
 	/**
@@ -86,6 +98,54 @@ public class ReactionNetwork{
 			Species species = species_iterator.next();
 			this.compartments.add(species.getCompartment());
 		}
+		
+		Reaction reaction_ = this.getReactions().getElement(reaction);	// only work with references from this reaction network
+
+		//###################################################
+		//# everything with respect to reaction's substrate #
+		//###################################################
+		
+		// add substrate and reaction to substrate-reaction-map
+		Complex substrate = reaction_.getSubstrate();
+		MySet<Reaction> reactions_consuming_complex = new MySet<Reaction>();
+		if (this.substrate_reaction_map.containsKey(substrate.toString()))
+			reactions_consuming_complex = this.substrate_reaction_map.get(substrate.toString());
+		reactions_consuming_complex.add(reaction_);
+		this.substrate_reaction_map.put(substrate.toString(), reactions_consuming_complex);
+
+		// substrate points to product so add product to substrate's directed neighbours
+		MySet<Complex> neighbours = new MySet<Complex>();
+		if (this.directed_neighbours.containsKey(substrate.toString()))
+			neighbours = this.directed_neighbours.get(substrate.toString());
+		neighbours.add(reaction_.getProduct());
+		this.directed_neighbours.put(substrate.toString(), neighbours);
+		
+		// substrate is connected to product so add product to substrate's undirected neighbours
+		neighbours = new MySet<Complex>();
+		if (this.undirected_neighbours.containsKey(substrate.toString()))
+			neighbours = this.undirected_neighbours.get(substrate.toString());
+		neighbours.add(reaction_.getProduct());
+		this.undirected_neighbours.put(substrate.toString(), neighbours);
+		
+		//#################################################
+		//# everything with respect to reaction's product #
+		//#################################################
+		
+		// add product and reaction to product-reaction-map
+		Complex product = reaction_.getProduct();
+		MySet<Reaction> reactions_producing_complex = new MySet<Reaction>();
+		if (this.product_reaction_map.containsKey(product.toString()))
+			reactions_producing_complex = this.product_reaction_map.get(product.toString());
+		// only add an reference from this reaction network
+		reactions_producing_complex.add(reaction_);
+		this.product_reaction_map.put(product.toString(), reactions_producing_complex);
+		
+		// product is connected to substrate so add substrate to product's undirected neighbours
+		neighbours = new MySet<Complex>();
+		if (this.undirected_neighbours.containsKey(product.toString()))
+			neighbours = this.undirected_neighbours.get(product.toString());
+		neighbours.add(reaction_.getSubstrate());
+		this.undirected_neighbours.put(product.toString(), neighbours);
 	}
 
 	public MySet<String> getCompartments(){
@@ -582,7 +642,7 @@ public class ReactionNetwork{
 		// get the corresponding linkage class, which must contain both complexes because they are directly linked
 		EquivalenceClass<Complex> linkage_class = this.getLinkageClasses().getEquivalenceClassByElement(c1);
 		// get the set of reactions attached to the complexes
-		MySet<Reaction> reactions = Reaction.getReactionsConsumingOrProducingComplexes(linkage_class, this.getReactions());
+		MySet<Reaction> reactions = this.getReactionsConsumingOrProducingComplexes(linkage_class);
 
 		// fill a new reaction network with the reactions that are not forward_reaction and not backward_reaction
 		ReactionNetwork reaction_network = new ReactionNetwork();
@@ -732,7 +792,7 @@ public class ReactionNetwork{
 		Iterator<Complex> iterator = strong_linkage_class.iterator();		// get the iterator of all complexes of this strong linkage class
 		while (iterator.hasNext()){											// loop over all complexes of this strong linkage class
 			Complex complex = iterator.next();
-			MySet<Complex> neighbours = Reaction.getComplexNeighboursForward(complex, this.getReactions());	// get all neighbouring complexes of the current complex in the direction of the edges adjacent to the current complex
+			MySet<Complex> neighbours = this.getComplexNeighboursForward(complex);	// get all neighbouring complexes of the current complex in the direction of the edges adjacent to the current complex
 			
 			Iterator<Complex> neighbour_iterator = neighbours.iterator();	// get the iterator of the neighbouring complexes
 			while (neighbour_iterator.hasNext()){							// loop over all neighbouring complexes
@@ -743,5 +803,81 @@ public class ReactionNetwork{
 		}
 		
 		return true; // if all complexes which can be reached from inside this strong linkage class are elements of this strong linkage class, then this strong linkage class must be terminal
+	}
+	
+	/**
+	 * Returns the set of reactions which consume given complex.
+	 * 
+	 * @param complex The complex.
+	 * @return The set of reactions consuming the complex.
+	 */
+	public MySet<Reaction> getReactionsConsumingComplex(Complex complex){
+		return this.substrate_reaction_map.get(complex.toString());
+	}
+	
+	/**
+	 * Returns the set of reactions which consume the set of given complexes.
+	 * 
+	 * @param complexes Set of complexes.
+	 * @return The set of reactions consuming the given complexes.
+	 */
+	public MySet<Reaction> getReactionsConsumingComplexes(MySet<Complex> complexes){
+		MySet<Reaction> ret = new MySet<Reaction>();
+		
+		Iterator<Complex> iterator = complexes.iterator();
+		while (iterator.hasNext()){
+			Complex complex = iterator.next();
+			ret = ret.union(this.substrate_reaction_map.get(complex.toString()));
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Returns the set of reactions which consume or produce the given complex.
+	 * 
+	 * @param complex The complex.
+	 * @return The set of reactions consuming or producing the given complex.
+	 */
+	public MySet<Reaction> getReactionsConsumingOrProducingComplex(Complex complex){
+		return this.substrate_reaction_map.get(complex.toString()).union(this.product_reaction_map.get(complex.toString()));
+	}
+	
+	/**
+	 * Returns the set of reactions which consume or produce the set of given complexes.
+	 * 
+	 * @param complexes Set of complexes.
+	 * @return The set of reactions consuming or producing the given complexes.
+	 */
+	public MySet<Reaction> getReactionsConsumingOrProducingComplexes(MySet<Complex> complexes){
+		MySet<Reaction> ret = new MySet<Reaction>();
+		
+		Iterator<Complex> iterator = complexes.iterator();
+		while (iterator.hasNext()){
+			Complex complex = iterator.next();
+			ret = ret.union(this.substrate_reaction_map.get(complex.toString()).union(this.product_reaction_map.get(complex.toString())));
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Returns directed neighbours of given complex.
+	 * 
+	 * @param complex The complex.
+	 * @return Set of directed neighbours of the given complex.
+	 */
+	public MySet<Complex> getComplexNeighboursForward(Complex complex){
+		return this.directed_neighbours.get(complex.toString());
+	}
+	
+	/**
+	 * Returns undirected neighbours of given complex.
+	 * 
+	 * @param complex The complex.
+	 * @return Set of undirected neighbours of the given complex.
+	 */
+	public MySet<Complex> getComplexNeighboursForwardBackward(Complex complex){
+		return this.undirected_neighbours.get(complex.toString());
 	}
 }
