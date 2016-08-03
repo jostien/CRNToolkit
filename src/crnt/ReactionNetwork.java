@@ -24,6 +24,8 @@ import miscellaneous.*;
 
 import java.util.*;
 
+import system.parsers.simple.SimpleParser;
+
 /**
  * 
  * @author neigenfind
@@ -45,11 +47,45 @@ public class ReactionNetwork{
 	private MyMatrix<Integer, Complex, EquivalenceClass<Complex>> L;
 	private MySet<String> compartments;
 	
-	private HashMap<String, MySet<Reaction>> substrate_reaction_map;// lookup table for reactions consuming complex
-	private HashMap<String, MySet<Reaction>> product_reaction_map;	// lookup table for reactions producing complex
+	// many reactions can be assigned to each complex, but reactions are uniquely defined and, thus, can only occur once
+	private HashMap<String, MySet<Reaction>> substrate_reaction_map;	// lookup table for reactions consuming complex
+	private HashMap<String, MySet<Reaction>> product_reaction_map;		// lookup table for reactions producing complex
 	
-	private HashMap<String, MySet<Complex>> directed_neighbours;	// lookup table for directed neighbours of complex
-	private HashMap<String, MySet<Complex>> undirected_neighbours;	// lookup table for undirected neighbours of complex
+	// each complex can have many neighbouring complexes, but each neighbour can only occur once
+	private HashMap<String, MySet<Complex>> forward_neighbours;			// lookup table for forward neighbours of complex
+	private HashMap<String, MySet<Complex>> backward_neighbours;		// lookup table for backward neighbours of complex
+	
+	// each species can occur in many complexes as well as in many reactions, therefore, multiset counts how often a complex
+	// is used as substrate or product so that removal of a reaction decreases multiplicities of corresponding substrate and
+	// product complexes
+	private HashMap<String, MyMultiset<Complex>> species_complex_map;	// lookup table for complexes containing species;
+	
+	public static void main(String[] args) throws Exception{
+		ReactionNetwork reaction_network = (new SimpleParser()).parse(System.getProperty("user.dir") + "/examples/simple/Feinberg1995a_example_4.7");
+		
+		Reaction reaction = null;
+		
+		reaction = (new SimpleParser()).parseString("R05 1 A + 1 B = 2 C");
+		ReactionNetwork rn1 = new ReactionNetwork();
+		rn1.addReaction(reaction);
+		
+		reaction = (new SimpleParser()).parseString("R09 1 D = 2 E");
+		ReactionNetwork rn2 = new ReactionNetwork();
+		rn2.addReaction(reaction);
+		
+		MySet<EquivalenceClass<Complex>> ecs1 = rn1.getLinkageClasses();
+		MySet<EquivalenceClass<Complex>> ecs2 = rn2.getLinkageClasses();
+		
+		Iterator<EquivalenceClass<Complex>> iterator = reaction_network.getLinkageClasses().iterator();
+		while (iterator.hasNext()){
+			EquivalenceClass<Complex> ec = iterator.next();
+			MySet<Complex> con = reaction_network.shortestPath(ecs1.toArrayList().get(0), ecs2.toArrayList().get(0), ec);
+			if (con != null)
+				System.out.println(ec.toString() + " is superset of " + ecs1.toArrayList().get(0).toString() + " and/or " + ecs2.toArrayList().get(0).toString() + ": " + con.toString());
+			else
+				System.out.println(ec.toString() + " is NOT superset of " + ecs1.toArrayList().get(0).toString() + " and/or " + ecs2.toArrayList().get(0).toString() + ": null");
+		}
+	}
 	
 	/**
 	 * The constructor.
@@ -65,8 +101,10 @@ public class ReactionNetwork{
 		this.substrate_reaction_map = new HashMap<String, MySet<Reaction>>();
 		this.product_reaction_map = new HashMap<String, MySet<Reaction>>();
 		
-		this.directed_neighbours = new HashMap<String, MySet<Complex>>();
-		this.undirected_neighbours = new HashMap<String, MySet<Complex>>();
+		this.forward_neighbours = new HashMap<String, MySet<Complex>>();
+		this.backward_neighbours = new HashMap<String, MySet<Complex>>();
+		
+		this.species_complex_map = new HashMap<String, MyMultiset<Complex>>();
 	}
 	
 	/**
@@ -74,7 +112,11 @@ public class ReactionNetwork{
 	 * 
 	 * @param reaction The new reaction.
 	 */
-	public void addReaction(Reaction reaction){
+	public boolean addReaction(Reaction reaction) /*throws Exception*/{
+		if (reaction.getSubstrate().equals(reaction.getProduct()))
+			return false;
+			//throw new Exception("substrate equals product: " + reaction.toString());
+		
 		Reaction reaction_clone = reaction.clone();
 		
 		this.R.add(reaction_clone);					// add the reaction to the reaction set
@@ -115,17 +157,10 @@ public class ReactionNetwork{
 
 		// substrate points to product so add product to substrate's directed neighbours
 		MySet<Complex> neighbours = new MySet<Complex>();
-		if (this.directed_neighbours.containsKey(substrate.toString()))
-			neighbours = this.directed_neighbours.get(substrate.toString());
+		if (this.forward_neighbours.containsKey(substrate.toString()))
+			neighbours = this.forward_neighbours.get(substrate.toString());
 		neighbours.add(reaction_.getProduct());
-		this.directed_neighbours.put(substrate.toString(), neighbours);
-		
-		// substrate is connected to product so add product to substrate's undirected neighbours
-		neighbours = new MySet<Complex>();
-		if (this.undirected_neighbours.containsKey(substrate.toString()))
-			neighbours = this.undirected_neighbours.get(substrate.toString());
-		neighbours.add(reaction_.getProduct());
-		this.undirected_neighbours.put(substrate.toString(), neighbours);
+		this.forward_neighbours.put(substrate.toString(), neighbours);
 		
 		//#################################################
 		//# everything with respect to reaction's product #
@@ -142,12 +177,127 @@ public class ReactionNetwork{
 		
 		// product is connected to substrate so add substrate to product's undirected neighbours
 		neighbours = new MySet<Complex>();
-		if (this.undirected_neighbours.containsKey(product.toString()))
-			neighbours = this.undirected_neighbours.get(product.toString());
+		if (this.backward_neighbours.containsKey(product.toString()))
+			neighbours = this.backward_neighbours.get(product.toString());
 		neighbours.add(reaction_.getSubstrate());
-		this.undirected_neighbours.put(product.toString(), neighbours);
+		this.backward_neighbours.put(product.toString(), neighbours);
+		
+		//#################################################
+		//# everything with respect to species of complex #
+		//#################################################
+		
+		substrate = reaction_.getSubstrate();
+		species_iterator = substrate.iterator();
+		while (species_iterator.hasNext()){
+			Species species = species_iterator.next();
+			MyMultiset<Complex> complexes = new MyMultiset<Complex>();
+			if (this.species_complex_map.containsKey(species.toString()))
+				complexes = this.species_complex_map.get(species.toString());
+			complexes.add(substrate);
+			this.species_complex_map.put(species.toString(), complexes);
+		}
+		
+		product = reaction_.getProduct();
+		species_iterator = product.iterator();
+		while (species_iterator.hasNext()){
+			Species species = species_iterator.next();
+			MyMultiset<Complex> complexes = new MyMultiset<Complex>();
+			if (this.species_complex_map.containsKey(species.toString()))
+				complexes = this.species_complex_map.get(species.toString());
+			complexes.add(product);
+			this.species_complex_map.put(species.toString(), complexes);
+		}
+		
+		return true;
 	}
-
+	
+	/**
+	 * Removes reaction from reaction network. (Not heavily tested yet)
+	 * 
+	 * @param reaction The reaction to remove.
+	 */
+	public void removeReaction(Reaction reaction){
+		Complex substrate = reaction.getSubstrate();
+		Complex product = reaction.getProduct();
+		
+		// remove species complex references
+		this.removeSpeciesComplexReferences(substrate);
+		this.removeSpeciesComplexReferences(product);
+		
+		// remove the neighbourhood references
+		this.forward_neighbours.get(substrate.toString()).remove(product);
+		this.backward_neighbours.get(product.toString()).remove(substrate);
+		
+		this.removeComplexReactionReferences(reaction);
+		
+		// if substrate is not consumed or produced, then remove it
+		if (!this.substrate_reaction_map.containsKey(substrate.toString()) &&
+			!this.product_reaction_map.containsKey(substrate.toString()))
+			this.C.remove(substrate);
+		
+		// if product is not consumed or produced, then remove it
+		if (!this.substrate_reaction_map.containsKey(product.toString()) &&
+			!this.product_reaction_map.containsKey(product.toString()))
+			this.C.remove(product);
+		
+		// remove reaction
+		this.R.remove(reaction);
+	}
+	
+	/**
+	 * The reference of a species to the complexes it occurs in is removed.
+	 * 
+	 * @param complex The complex whose species references are to be removed.
+	 */
+	private void removeSpeciesComplexReferences(Complex complex){
+		Iterator<Species> species_iterator = complex.iterator();
+		while (species_iterator.hasNext()){
+			Species species = species_iterator.next();
+			
+			//System.out.println("trying to remove " + species.toString());
+			if (this.species_complex_map.containsKey(species.toString())){
+				MyMultiset<Complex> complexes = this.species_complex_map.get(species.toString());
+				//System.out.println(complexes.toString());
+				complexes.remove(complex);
+				//System.out.println(complexes.toString());
+			
+				// if there is no complex associated with this species, then remove reference and species
+				if (complexes.size() == 0){
+					this.species_complex_map.remove(species.toString());
+					this.S.remove(species);
+					//System.out.println(species.toString() + " removed");
+				}
+			}
+		}
+	}
+	
+	/**
+	 * Removes reaction from substrate and product lookup table
+	 * 
+	 * @param reaction The reaction of interest. 
+	 */
+	private void removeComplexReactionReferences(Reaction reaction){
+		Complex complex = reaction.getSubstrate();
+		if (this.substrate_reaction_map.containsKey(complex.toString())){
+			MySet<Reaction> consuming_reactions = this.substrate_reaction_map.get(complex.toString());
+			consuming_reactions.remove(reaction);
+			
+			// if there is no reaction consuming the complex, then remove reference
+			if (consuming_reactions.isEmpty())
+				this.substrate_reaction_map.remove(complex.toString());
+		}
+		
+		complex = reaction.getProduct();
+		if (this.product_reaction_map.containsKey(complex.toString())){
+			MySet<Reaction> producing_reactions = this.product_reaction_map.get(complex.toString());
+			producing_reactions.remove(reaction);
+			
+			// if there is no reaction producing the complex, then remove reference
+			if (producing_reactions.isEmpty())
+				this.product_reaction_map.remove(complex.toString());
+		}
+	}
+	
 	public MySet<String> getCompartments(){
 		return this.compartments;
 	}
@@ -843,11 +993,15 @@ public class ReactionNetwork{
 	 * @return The set of reactions consuming or producing the given complex.
 	 */
 	public MySet<Reaction> getReactionsConsumingOrProducingComplex(Complex complex){
-		MySet<Reaction> ret = this.substrate_reaction_map.get(complex.toString()).union(this.product_reaction_map.get(complex.toString()));
-		if (ret == null)
-			return new MySet<Reaction>();
+		MySet<Reaction> consuming_reactions = new MySet<Reaction>();
+		if (this.substrate_reaction_map.containsKey(complex.toString()))
+			consuming_reactions = this.substrate_reaction_map.get(complex.toString());
 		
-		return ret;
+		MySet<Reaction> producing_reactions = new MySet<Reaction>();
+		if (this.product_reaction_map.containsKey(complex.toString()))
+			producing_reactions = this.product_reaction_map.get(complex.toString());
+		
+		return consuming_reactions.union(producing_reactions);
 	}
 	
 	/**
@@ -875,8 +1029,15 @@ public class ReactionNetwork{
 	 * @return Set of directed neighbours of the given complex.
 	 */
 	public MySet<Complex> getComplexNeighboursForward(Complex complex){
-		if (this.directed_neighbours.containsKey(complex.toString()))
-			return this.directed_neighbours.get(complex.toString());
+		if (this.forward_neighbours.containsKey(complex.toString()))
+			return this.forward_neighbours.get(complex.toString());
+		
+		return new MySet<Complex>();
+	}
+	
+	public MySet<Complex> getComplexNeighboursBackward(Complex complex){
+		if (this.backward_neighbours.containsKey(complex.toString()))
+			return this.backward_neighbours.get(complex.toString());
 		
 		return new MySet<Complex>();
 	}
@@ -888,9 +1049,181 @@ public class ReactionNetwork{
 	 * @return Set of undirected neighbours of the given complex.
 	 */
 	public MySet<Complex> getComplexNeighboursForwardBackward(Complex complex){
-		if (this.undirected_neighbours.containsKey(complex.toString()))
-			return this.undirected_neighbours.get(complex.toString());
+		MySet<Complex> forwards = new MySet<Complex>();
+		MySet<Complex> backwards = new MySet<Complex>();
 		
-		return new MySet<Complex>();
+		if (this.forward_neighbours.containsKey(complex.toString()))
+			forwards = this.forward_neighbours.get(complex.toString());
+		
+		if (this.backward_neighbours.containsKey(complex.toString()))
+			backwards = this.backward_neighbours.get(complex.toString());
+		
+		return forwards.union(backwards);
+	}
+	
+	/**
+	 * Computes the shortest path between two subnetworks.
+	 * 
+	 * @param subset1 First subset.
+	 * @param subset2 Second subset.
+	 * @param superset The superset.
+	 * @return MySet<Complex> containing the complexes connecting the two networks or null if superset is not a superset of one of the two subsets.
+	 * @throws Exception
+	 */
+	public MySet<Complex> shortestPath(MySet<Complex> subset1, MySet<Complex> subset2, MySet<Complex> superset) throws Exception{
+		if (!superset.containsAll(subset1) || !superset.containsAll(subset2))
+			return null;
+		
+		Complex complex1 = subset1.head();
+		Complex complex2 = subset2.head();
+		
+		Complex source = new Complex().addSpecies(new Species("source"));
+		Complex sink = new Complex().addSpecies(new Species("sink"));
+		
+		Reaction reaction1 = new Reaction("source", source, complex1);
+		Reaction reaction2 = new Reaction("sink", complex2, sink);
+		
+		this.addReaction(reaction1);
+		this.addReaction(reaction2);
+		
+		MySet<Complex> route = this.dijkstra(source, sink);
+		route.remove(source);
+		route.remove(sink);
+		
+		this.removeReaction(reaction1);
+		this.removeReaction(reaction2);
+		
+		return route;
+	}
+	
+	/**
+	 * Computes shortest path between to complexes in reaction network.
+	 * 
+	 * @param source The source complex.
+	 * @param sink The sink complex.
+	 * @return MySet<Complex> containing the complexes between source and sink.
+	 */
+	public MySet<Complex> dijkstra(Complex source, Complex sink){
+		MySet<Complex> nodes = this.getComplexes();
+		
+		int[] dist = new int[nodes.size()];
+		int[] prev = new int[nodes.size()];
+		
+		dist[nodes.getIndex(source)] = 0;
+		MyPriorityQueue<ComplexDistance> pq = new MyPriorityQueue<ComplexDistance>();
+		
+		// fill priority queue
+		for (int i = 0; i < nodes.size(); i++){
+			if (i != nodes.getIndex(source)){
+				dist[i] = Integer.MAX_VALUE;
+				prev[i] = -1;
+			}
+			pq.add(new ComplexDistance(nodes.toArrayList().get(i), dist[i]));
+		}
+		
+		// traverse graph, collect distances, precursors and update queue
+		while (pq.size() > 0){
+			ComplexDistance cd = pq.poll();
+			Complex u = cd.getFirstElement();
+			if (u.equals(sink))
+				break;
+			
+			MySet<Complex> neighbours = this.getComplexNeighboursForwardBackward(u);
+			Iterator<Complex> iterator = neighbours.iterator();
+			while (iterator.hasNext()){
+				Complex v = iterator.next();
+				int alt = dist[nodes.getIndex(u)] + 1;
+				if (alt < dist[nodes.getIndex(v)]){
+					// save data about old pair
+					ComplexDistance cd_rm = new ComplexDistance(v, dist[nodes.getIndex(v)]);
+					
+					// update data
+					dist[nodes.getIndex(v)] = alt;
+					prev[nodes.getIndex(v)] = nodes.getIndex(u);
+					
+					// remove old pair and insert updated pair
+					pq.remove(cd_rm);
+					pq.add(new ComplexDistance(v, alt));
+				}
+			}
+		}
+		
+		MySet<Complex> route = new MySet<Complex>();
+		Complex node = sink;
+		route.add(node);
+		while (!node.equals(source)){
+			if (prev[nodes.getIndex(node)] < 0)
+				return null;
+			
+			node = nodes.toArrayList().get(prev[nodes.getIndex(node)]);
+			route.add(node);
+		}
+		
+		return route;
+	}
+	
+	/**
+	 * Pair of complex and distance.
+	 * 
+	 * @author neigenfind
+	 *
+	 */
+	static class ComplexDistance extends MyPair<Complex, Integer> implements Comparable<ComplexDistance>{
+		/**
+		 * Constructor.
+		 * 
+		 * @param first_element The complex.
+		 * @param second_element The initial distance.
+		 */
+		public ComplexDistance(Complex first_element, Integer second_element) {
+			super(first_element, second_element);
+		}
+		
+		/**
+		 * Makes string from object.
+		 */
+		public String toString(){
+			return "(" + this.getFirstElement() + ", " + this.getSecondElement().toString() + ")";
+		}
+		
+		/**
+		 * Compares two ComplexDistance objects with respect to distance.
+		 * 
+		 * @param cd1 First ComplexDistance object.
+		 * @param cd2 Second ComplexDistance object.
+		 * @return -1, 0 or 1.
+		 */
+		public int compare(ComplexDistance cd1, ComplexDistance cd2) {
+			return cd1.compareTo(cd2);
+		}
+		
+		/**
+		 * Compares this ComplexDistance object with another one.
+		 * 
+		 * @param cd The other ComplexDistance object.
+		 * @return -1, 0 or 1.
+		 */
+		public int compareTo(ComplexDistance cd) {
+			return this.getSecondElement() - cd.getSecondElement();
+		}
+		
+		/**
+		 * Compares two ComplexDistance objects with respect to its string.
+		 * 
+		 * @param The object to compare with.
+		 * return -1, 0 or 1.
+		 */
+		public boolean equals(Object o) {
+			return this.toString().equals(((ComplexDistance)o).toString());
+		}
+		
+		/**
+		 * Returns hash code of this ComplexDistance object with respect to its string.
+		 * 
+		 * @return The hash code.
+		 */
+		public int hashCode(){
+			return (this.toString()).hashCode();
+		}
 	}
 }
