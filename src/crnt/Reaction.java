@@ -23,19 +23,17 @@ package crnt;
 import java.util.*;
 import miscellaneous.*;
 
-public class Reaction implements Comparable<Object>{
+public class Reaction extends MyEdge<MyMultiset<Species>>{
 	private String id;
 	private String name;
-	private Complex substrate;
-	private Complex product;
 	private Reaction inverse;
 	private String notes;
 	
 	public Reaction(String id, Complex substrate, Complex product) throws Exception{
+		super(substrate, product);
+		
 		this.id = id;
 		this.name = "";
-		this.substrate = substrate;
-		this.product = product;
 		this.inverse = null;
 		this.notes = null;
 		
@@ -43,10 +41,10 @@ public class Reaction implements Comparable<Object>{
 	}
 	
 	public Reaction(String id, String name, Complex substrate, Complex product) throws Exception{
+		super(substrate, product);
+		
 		this.id = id;
 		this.name = name;
-		this.substrate = substrate;
-		this.product = product;
 		this.inverse = null;
 		this.notes = null;
 		
@@ -54,11 +52,11 @@ public class Reaction implements Comparable<Object>{
 	}
 	
 	public Reaction(String id, String name, Complex substrate, Complex product, Reaction inverse) throws Exception{
+		super(substrate, product);
+		
 		this.id = id;
 		this.name = name;
-		this.substrate = substrate;
-		this.product = product;
-		
+
 		if (inverse != null)
 			if (!inverse.getSubstrate().equals(this.getProduct()) || !inverse.getProduct().equals(this.getSubstrate()))
 				throw new Exception("Given reaction is not inverse of this Reaction.");
@@ -70,11 +68,11 @@ public class Reaction implements Comparable<Object>{
 	}
 	
 	public Reaction(String id, String name, Complex substrate, Complex product, Reaction inverse, String notes) throws Exception{
+		super(substrate, product);
+		
 		this.id = id;
 		this.name = name;
-		this.substrate = substrate;
-		this.product = product;
-		
+
 		if (inverse != null)
 			if (!inverse.getSubstrate().equals(this.getProduct()) || !inverse.getProduct().equals(this.getSubstrate()))
 				throw new Exception("Given reaction is not inverse of this Reaction.");
@@ -105,19 +103,19 @@ public class Reaction implements Comparable<Object>{
 	}
 	
 	public void setSubstrate(Complex substrate){
-		this.substrate = substrate;
+		this.setSource(substrate);
 	}
 	
 	public void setProduct(Complex product){
-		this.product = product;
+		this.setSink(product);
 	}
 	
 	public Complex getSubstrate(){
-		return this.substrate;
+		return (Complex)this.getSource();
 	}
 	
 	public Complex getProduct(){
-		return this.product;
+		return (Complex)this.getSink();
 	}
 	
 	public Reaction getInverse(){
@@ -137,9 +135,9 @@ public class Reaction implements Comparable<Object>{
 	}
 	
 	public boolean containsSpecies(Species species){
-		if (this.substrate.contains(species))
+		if (((Complex)this.getSource()).getNode().contains(species))
 			return true;
-		if (this.product.contains(species))
+		if (((Complex)this.getSink()).getNode().contains(species))
 			return true;
 		return false;
 	}
@@ -149,18 +147,18 @@ public class Reaction implements Comparable<Object>{
 	}
 	
 	public String toString(){
-		return this.id + " := " + this.substrate.toString() + " -> " + this.product.toString();
+		return this.id + " := " + ((Complex)this.getSource()).toString() + " -> " + ((Complex)this.getSink()).toString();
 	}
 	
 	public String toLaTeXString() throws Exception{
-		return "R_{" + this.id + "}" + " := " + this.substrate.toLaTeXString() + " \\rightarrow " + this.product.toLaTeXString();
+		return "R_{" + this.id + "}" + " := " + ((Complex)this.getSource()).getNode().toLaTeXString() + " \\rightarrow " + ((Complex)this.getSink()).getNode().toLaTeXString();
 	}
 	
-	public int compareTo(Object o){
-		return this.toString().compareTo(((Reaction)o).toString());
+	public int compareTo(Reaction reaction){
+		return this.toString().compareTo(((Reaction)reaction).toString());
 	}
 	
-	public boolean equals(Object o){
+	public boolean equals(Reaction o){
 		return this.toString().equals(((Reaction)o).toString());
 	}
 	
