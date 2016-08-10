@@ -79,7 +79,7 @@ public class SimpleParser extends Parser{
 				i++;
 			}
 		}
-		
+
 		return new Reaction(name, name, substrate, product);
 	}
 }

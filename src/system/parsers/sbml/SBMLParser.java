@@ -90,7 +90,7 @@ public class SBMLParser extends Parser{
 					species_reference.getSpeciesInstance().getName(),
 					compartment);
 			
-			ret.add(species, species_reference.getStoichiometry());
+			ret.getNode().add(species, species_reference.getStoichiometry());
 		}
 
 		return ret;

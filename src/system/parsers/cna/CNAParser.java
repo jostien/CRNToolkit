@@ -90,14 +90,14 @@ public class CNAParser extends Parser{
 			if (!cells[i].equals("=") && z != null && !p){
 				Species species = new Species(Species.ID_PREFIX + cells[i + 1], cells[i + 1], "default");
 				for (int j = 0; j < z; j++)
-					substrate.add(species);
+					substrate.getNode().add(species);
 				i++;
 			}
 			
 			if (!cells[i].equals("=") && z != null && p){
 				Species species = new Species(Species.ID_PREFIX + cells[i + 1], cells[i + 1], "default");	// set compartment to default
 				for (int j = 0; j < z; j++)
-					product.add(species);
+					product.getNode().add(species);
 				
 				i++;
 			}

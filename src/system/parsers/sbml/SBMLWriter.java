@@ -124,7 +124,7 @@ public class SBMLWriter {
 			} else
 				sbml_species = this.model.getSpecies(crnt_species.getId());
 			
-			Double number_of_occurences = complex.getNumberOfOccurences(crnt_species);
+			Double number_of_occurences = complex.getNode().getNumberOfOccurences(crnt_species);
 			org.sbml.jsbml.SpeciesReference sbml_sr;
 			if (is_substrate){
 				sbml_sr = sbml_reaction.createReactant(sbml_species);
