@@ -87,7 +87,7 @@ public class ExampleBaseFunctionality {
 		
 		// compute number of linkage classes l and show them
 		System.out.println("number of linkage classes is " + reaction_network.getLinkageClasses().size());
-		Iterator<EquivalenceClass<Complex>> lc_iterator = reaction_network.getLinkageClasses().iterator();
+		Iterator<MyEquivalenceClass<Complex>> lc_iterator = reaction_network.getLinkageClasses().iterator();
 		while (lc_iterator.hasNext())
 			System.out.println(lc_iterator.next().toString());
 		System.out.println();
@@ -106,10 +106,10 @@ public class ExampleBaseFunctionality {
 
 		// compute number of strong linkage classes and show them
 		System.out.println("number of strong linkage classes is " + reaction_network.getStrongLinkageClasses().size());
-		Partition<Complex> slcs = reaction_network.getStrongLinkageClasses();
-		Iterator<EquivalenceClass<Complex>> slc_iterator = slcs.iterator();
+		MyPartition<Complex> slcs = reaction_network.getStrongLinkageClasses();
+		Iterator<MyEquivalenceClass<Complex>> slc_iterator = slcs.iterator();
 		while (slc_iterator.hasNext()){
-			EquivalenceClass<Complex> slc = slc_iterator.next();
+			MyEquivalenceClass<Complex> slc = slc_iterator.next();
 			System.out.println(slc.toString());
 			System.out.println("strong linkage class is terminal: " + reaction_network.isTerminal(slc));
 		}		
