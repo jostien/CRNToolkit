@@ -33,27 +33,17 @@ import system.parsers.simple.SimpleParser;
  * The class ReactionNetwork.
  * This class implements the mathematical structure reaction network.
  */
-public class ReactionNetwork{
+public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	private String name;
 	private MySet<Species> S;							// the set of species
-	private MySet<Complex> C;							// the set of complexes
-	private MySet<Reaction> R;							// the set of reactions
-	private Partition<Complex> linkage_classes;			// the set of linkage classes
-	private Partition<Complex> strong_linkage_classes;	// the set of strong linkage classes
+	private MyPartition<Complex> linkage_classes;			// the set of linkage classes
+	private MyPartition<Complex> strong_linkage_classes;	// the set of strong linkage classes
 	private MyMatrix<Double, Species, Complex> Y;
 	private MyMatrix<Integer, Complex, Reaction> Ia;
 	private MyMatrix<Double, Species, Reaction> N;
 	private MyMatrix<Integer, Complex, Complex> A;
-	private MyMatrix<Integer, Complex, EquivalenceClass<Complex>> L;
+	private MyMatrix<Integer, Complex, MyEquivalenceClass<Complex>> L;
 	private MySet<String> compartments;
-	
-	// many reactions can be assigned to each complex, but reactions are uniquely defined and, thus, can only occur once
-	private HashMap<String, MySet<Reaction>> substrate_reaction_map;	// lookup table for reactions consuming complex
-	private HashMap<String, MySet<Reaction>> product_reaction_map;		// lookup table for reactions producing complex
-	
-	// each complex can have many neighbouring complexes, but each neighbour can only occur once
-	private HashMap<String, MySet<Complex>> forward_neighbours;			// lookup table for forward neighbours of complex
-	private HashMap<String, MySet<Complex>> backward_neighbours;		// lookup table for backward neighbours of complex
 	
 	// each species can occur in many complexes as well as in many reactions, therefore, multiset counts how often a complex
 	// is used as substrate or product so that removal of a reaction decreases multiplicities of corresponding substrate and
@@ -73,12 +63,12 @@ public class ReactionNetwork{
 		ReactionNetwork rn2 = new ReactionNetwork();
 		rn2.addReaction(reaction);
 		
-		MySet<EquivalenceClass<Complex>> ecs1 = rn1.getLinkageClasses();
-		MySet<EquivalenceClass<Complex>> ecs2 = rn2.getLinkageClasses();
+		MySet<MyEquivalenceClass<Complex>> ecs1 = rn1.getLinkageClasses();
+		MySet<MyEquivalenceClass<Complex>> ecs2 = rn2.getLinkageClasses();
 		
-		Iterator<EquivalenceClass<Complex>> iterator = reaction_network.getLinkageClasses().iterator();
+		Iterator<MyEquivalenceClass<Complex>> iterator = reaction_network.getLinkageClasses().iterator();
 		while (iterator.hasNext()){
-			EquivalenceClass<Complex> ec = iterator.next();
+			MyEquivalenceClass<Complex> ec = iterator.next();
 			MySet<Complex> con = reaction_network.shortestPath(ecs1.toArrayList().get(0), ecs2.toArrayList().get(0), ec);
 			if (con != null)
 				System.out.println(ec.toString() + " is superset of " + ecs1.toArrayList().get(0).toString() + " and/or " + ecs2.toArrayList().get(0).toString() + ": " + con.toString());
@@ -91,18 +81,12 @@ public class ReactionNetwork{
 	 * The constructor.
 	 */
 	public ReactionNetwork() throws Exception{
+		super();
+		
 		this.S = new MySet<Species>();
-		this.C = new MySet<Complex>();
-		this.R = new MySet<Reaction>();
-		this.linkage_classes = new Partition<Complex>(new Linked(this));
-		this.strong_linkage_classes = new Partition<Complex>(new StronglyLinked(this));
+		this.linkage_classes = new MyPartition(new MyConnectedComponents(this));
+		this.strong_linkage_classes = new MyPartition(new MyStronglyConnectedComponents(this));
 		this.compartments = new MySet<String>();
-		
-		this.substrate_reaction_map = new HashMap<String, MySet<Reaction>>();
-		this.product_reaction_map = new HashMap<String, MySet<Reaction>>();
-		
-		this.forward_neighbours = new HashMap<String, MySet<Complex>>();
-		this.backward_neighbours = new HashMap<String, MySet<Complex>>();
 		
 		this.species_complex_map = new HashMap<String, MyMultiset<Complex>>();
 	}
@@ -113,81 +97,34 @@ public class ReactionNetwork{
 	 * @param reaction The new reaction.
 	 */
 	public boolean addReaction(Reaction reaction) /*throws Exception*/{
-		if (reaction.getSubstrate().equals(reaction.getProduct()))
+		if (!this.addEdge(reaction))
 			return false;
-			//throw new Exception("substrate equals product: " + reaction.toString());
 		
-		Reaction reaction_clone = reaction.clone();
-		
-		this.R.add(reaction_clone);					// add the reaction to the reaction set
-
-		this.C.add(reaction_clone.getSubstrate());	// add the substrate complex to the set of complexes
-		this.C.add(reaction_clone.getProduct());	// add the product complex to the set of complexes
-
-		this.S.addAll(reaction_clone.getSubstrate().getSpecies());	// add all species of the substrate complex to the set of species
-		this.S.addAll(reaction_clone.getProduct().getSpecies());	// add all species of the substrate complex to the set of species
+		reaction = (Reaction)this.getEdge(reaction);
+	
+		this.getSpecies().addAll(reaction.getSubstrate().getSpecies());	// add all species of the substrate complex to the set of species
+		this.getSpecies().addAll(reaction.getProduct().getSpecies());		// add all species of the substrate complex to the set of species
 
 		// add compartments of substrates
-		Iterator<Species> species_iterator = reaction_clone.getSubstrate().iterator();
+		Iterator<Species> species_iterator = reaction.getSubstrate().getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			this.compartments.add(species.getCompartment());
 		}
 		
 		// add compartments of products
-		species_iterator = reaction_clone.getProduct().iterator();
+		species_iterator = reaction.getProduct().getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			this.compartments.add(species.getCompartment());
 		}
 		
-		Reaction reaction_ = this.getReactions().getElement(reaction);	// only work with references from this reaction network
-
-		//###################################################
-		//# everything with respect to reaction's substrate #
-		//###################################################
-		
-		// add substrate and reaction to substrate-reaction-map
-		Complex substrate = reaction_.getSubstrate();
-		MySet<Reaction> reactions_consuming_complex = new MySet<Reaction>();
-		if (this.substrate_reaction_map.containsKey(substrate.toString()))
-			reactions_consuming_complex = this.substrate_reaction_map.get(substrate.toString());
-		reactions_consuming_complex.add(reaction_);
-		this.substrate_reaction_map.put(substrate.toString(), reactions_consuming_complex);
-
-		// substrate points to product so add product to substrate's directed neighbours
-		MySet<Complex> neighbours = new MySet<Complex>();
-		if (this.forward_neighbours.containsKey(substrate.toString()))
-			neighbours = this.forward_neighbours.get(substrate.toString());
-		neighbours.add(reaction_.getProduct());
-		this.forward_neighbours.put(substrate.toString(), neighbours);
-		
-		//#################################################
-		//# everything with respect to reaction's product #
-		//#################################################
-		
-		// add product and reaction to product-reaction-map
-		Complex product = reaction_.getProduct();
-		MySet<Reaction> reactions_producing_complex = new MySet<Reaction>();
-		if (this.product_reaction_map.containsKey(product.toString()))
-			reactions_producing_complex = this.product_reaction_map.get(product.toString());
-		// only add an reference from this reaction network
-		reactions_producing_complex.add(reaction_);
-		this.product_reaction_map.put(product.toString(), reactions_producing_complex);
-		
-		// product is connected to substrate so add substrate to product's undirected neighbours
-		neighbours = new MySet<Complex>();
-		if (this.backward_neighbours.containsKey(product.toString()))
-			neighbours = this.backward_neighbours.get(product.toString());
-		neighbours.add(reaction_.getSubstrate());
-		this.backward_neighbours.put(product.toString(), neighbours);
-		
 		//#################################################
 		//# everything with respect to species of complex #
 		//#################################################
 		
-		substrate = reaction_.getSubstrate();
-		species_iterator = substrate.iterator();
+		Complex substrate = reaction.getSubstrate();
+		species_iterator = substrate.getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			MyMultiset<Complex> complexes = new MyMultiset<Complex>();
@@ -197,8 +134,8 @@ public class ReactionNetwork{
 			this.species_complex_map.put(species.toString(), complexes);
 		}
 		
-		product = reaction_.getProduct();
-		species_iterator = product.iterator();
+		Complex product = reaction.getProduct();
+		species_iterator = product.getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			MyMultiset<Complex> complexes = new MyMultiset<Complex>();
@@ -217,31 +154,14 @@ public class ReactionNetwork{
 	 * @param reaction The reaction to remove.
 	 */
 	public void removeReaction(Reaction reaction){
+		this.removeEdge(reaction);
+		
 		Complex substrate = reaction.getSubstrate();
 		Complex product = reaction.getProduct();
 		
 		// remove species complex references
 		this.removeSpeciesComplexReferences(substrate);
 		this.removeSpeciesComplexReferences(product);
-		
-		// remove the neighbourhood references
-		this.forward_neighbours.get(substrate.toString()).remove(product);
-		this.backward_neighbours.get(product.toString()).remove(substrate);
-		
-		this.removeComplexReactionReferences(reaction);
-		
-		// if substrate is not consumed or produced, then remove it
-		if (!this.substrate_reaction_map.containsKey(substrate.toString()) &&
-			!this.product_reaction_map.containsKey(substrate.toString()))
-			this.C.remove(substrate);
-		
-		// if product is not consumed or produced, then remove it
-		if (!this.substrate_reaction_map.containsKey(product.toString()) &&
-			!this.product_reaction_map.containsKey(product.toString()))
-			this.C.remove(product);
-		
-		// remove reaction
-		this.R.remove(reaction);
 	}
 	
 	/**
@@ -250,7 +170,7 @@ public class ReactionNetwork{
 	 * @param complex The complex whose species references are to be removed.
 	 */
 	private void removeSpeciesComplexReferences(Complex complex){
-		Iterator<Species> species_iterator = complex.iterator();
+		Iterator<Species> species_iterator = complex.getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			
@@ -264,37 +184,10 @@ public class ReactionNetwork{
 				// if there is no complex associated with this species, then remove reference and species
 				if (complexes.size() == 0){
 					this.species_complex_map.remove(species.toString());
-					this.S.remove(species);
+					this.getSpecies().remove(species);
 					//System.out.println(species.toString() + " removed");
 				}
 			}
-		}
-	}
-	
-	/**
-	 * Removes reaction from substrate and product lookup table
-	 * 
-	 * @param reaction The reaction of interest. 
-	 */
-	private void removeComplexReactionReferences(Reaction reaction){
-		Complex complex = reaction.getSubstrate();
-		if (this.substrate_reaction_map.containsKey(complex.toString())){
-			MySet<Reaction> consuming_reactions = this.substrate_reaction_map.get(complex.toString());
-			consuming_reactions.remove(reaction);
-			
-			// if there is no reaction consuming the complex, then remove reference
-			if (consuming_reactions.isEmpty())
-				this.substrate_reaction_map.remove(complex.toString());
-		}
-		
-		complex = reaction.getProduct();
-		if (this.product_reaction_map.containsKey(complex.toString())){
-			MySet<Reaction> producing_reactions = this.product_reaction_map.get(complex.toString());
-			producing_reactions.remove(reaction);
-			
-			// if there is no reaction producing the complex, then remove reference
-			if (producing_reactions.isEmpty())
-				this.product_reaction_map.remove(complex.toString());
 		}
 	}
 	
@@ -316,7 +209,7 @@ public class ReactionNetwork{
 	 * @return The set of reactions.
 	 */
 	public MySet<Reaction> getReactions(){
-		return this.R;
+		return (MySet)this.getEdges();
 	}
 	
 	/**
@@ -324,7 +217,7 @@ public class ReactionNetwork{
 	 * 
 	 * @return The set of strong linkage classes.
 	 */
-	public Partition<Complex> getStrongLinkageClasses() throws Exception{
+	public MyPartition<Complex> getStrongLinkageClasses() throws Exception{
 		if (this.strong_linkage_classes.size() == 0)
 			this.makeStrongLinkageClasses();
 		
@@ -336,7 +229,7 @@ public class ReactionNetwork{
 	 * 
 	 * @return The set of linkage classes.
 	 */
-	public Partition<Complex> getLinkageClasses() throws Exception{
+	public MyPartition<Complex> getLinkageClasses() throws Exception{
 		if (this.linkage_classes.size() == 0)
 			this.makeLinkageClasses();
 		
@@ -349,7 +242,7 @@ public class ReactionNetwork{
 	public String toString(){
 		String ret = "";
 		
-		Iterator<Reaction> iterator = this.R.iterator();
+		Iterator<Reaction> iterator = this.getReactions().iterator();
 		while (iterator.hasNext()){
 			Reaction reaction = iterator.next();
 			ret = ret + reaction.toString() + "\n";
@@ -359,22 +252,24 @@ public class ReactionNetwork{
 	}
 	
 	public void makeStrongLinkageClasses() throws Exception{
-		this.strong_linkage_classes = new Partition<Complex>(new StronglyLinked(this));
-
-		Iterator<Complex> iterator = this.getComplexes().iterator();
+		MyPartition<MyNode<MyMultiset<Species>>> partition_of_nodes = new MyPartition(new MyStronglyConnectedComponents(this));
+		Iterator<MyNode<MyMultiset<Species>>> iterator = (Iterator<MyNode<MyMultiset<Species>>>)this.getNodes().iterator();
 		while (iterator.hasNext())
-			this.strong_linkage_classes.addElementToEquivalenceClasses(iterator.next());
+			partition_of_nodes.addElementToEquivalenceClasses(iterator.next());
+		
+		this.strong_linkage_classes = (MyPartition)partition_of_nodes;
 	}
 	
 	/**
 	 * Calculates the linkage classes recursively using method depthFirstSearch.
 	 */
 	public void makeLinkageClasses() throws Exception{
-		this.linkage_classes = new Partition<Complex>(new Linked(this));	// this empty set will later on consist of the linkage classes
-
-		Iterator<Complex> iterator = this.getComplexes().iterator();
+		MyPartition<MyNode<MyMultiset<Species>>> partition_of_nodes = new MyPartition(new MyConnectedComponents(this));
+		Iterator<MyNode<MyMultiset<Species>>> iterator = (Iterator<MyNode<MyMultiset<Species>>>)this.getNodes().iterator();
 		while (iterator.hasNext())
-			this.linkage_classes.addElementToEquivalenceClasses(iterator.next());
+			partition_of_nodes.addElementToEquivalenceClasses(iterator.next());
+		
+		this.linkage_classes = (MyPartition)partition_of_nodes;
 	}
 	
 	/**
@@ -384,20 +279,20 @@ public class ReactionNetwork{
 		this.Y = new MyMatrix<Double,Species,Complex>();
 		
 //		int c = 0;
-		Iterator<Complex> complex_iterator = this.C.iterator();
+		Iterator<Complex> complex_iterator = this.getComplexes().iterator();
 		while (complex_iterator.hasNext()){
 			Complex complex = complex_iterator.next();
 			
-//			System.out.println(c + " of " + this.C.size() + ": " + complex.toString());
+//			System.out.println(c + " of " + this.getComplexes().size() + ": " + complex.toString());
 //			c++;
 			
-			Iterator<Species> species_iterator = this.S.iterator();
+			Iterator<Species> species_iterator = this.getSpecies().iterator();
 			while (species_iterator.hasNext()){
 				Species species = species_iterator.next();
 				
 				MyEntry<Double,Species,Complex> entry;
-				if (complex.contains(species))
-					entry = new MyDouble<Species,Complex>(complex.getNumberOfOccurences(species), species, complex);
+				if (complex.getNode().contains(species))
+					entry = new MyDouble<Species,Complex>(complex.getNode().getNumberOfOccurences(species), species, complex);
 				else
 					entry = new MyDouble<Species,Complex>(new Double(0), species, complex);
 				
@@ -413,17 +308,17 @@ public class ReactionNetwork{
 		this.Ia = new MyMatrix<Integer,Complex,Reaction>();
 		
 //		int c = 0;
-		Iterator<Reaction> reaction_iterator = this.R.iterator();
+		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
 		while (reaction_iterator.hasNext()){
 			Reaction reaction = reaction_iterator.next();
 			
-//			System.out.println(c + " of " + this.R.size() + ": " + reaction.toString());
+//			System.out.println(c + " of " + this.getReactions().size() + ": " + reaction.toString());
 //			c++;
 			
 			Complex substrate = reaction.getSubstrate();
 			Complex product = reaction.getProduct();
 			
-			Iterator<Complex> complex_iterator = this.C.iterator();
+			Iterator<Complex> complex_iterator = this.getComplexes().iterator();
 			while (complex_iterator.hasNext()){
 				Complex complex = complex_iterator.next();
 				
@@ -444,17 +339,17 @@ public class ReactionNetwork{
 	 * Creates N matrix. Very fast version.
 	 */
 	public void makeSimpleNMatrix(){
-		this.N = new MyMatrix<Double,Species,Reaction>(this.S,this.R);
+		this.N = new MyMatrix<Double,Species,Reaction>(this.getSpecies(),this.getReactions());
 		
-		ArrayList<Species> species_array = this.S.toArrayList();
-		ArrayList<Reaction> reaction_array = this.R.toArrayList();
+		ArrayList<Species> species_array = this.getSpecies().toArrayList();
+		ArrayList<Reaction> reaction_array = this.getReactions().toArrayList();
 		for (int j = 0; j < reaction_array.size(); j++){
 			Reaction reaction = reaction_array.get(j);
 			Complex substrate = reaction.getSubstrate();
 			Complex product = reaction.getProduct();
-			MyMultiset<Species> difference = product.sub(substrate);
+			MyMultiset<Species> difference = product.getNode().sub(substrate.getNode());
 			
-//			System.out.println(j + " of " + this.R.size() + ": " + reaction.toString());
+//			System.out.println(j + " of " + this.getReactions().size() + ": " + reaction.toString());
 
 			for (int i = 0; i < species_array.size(); i++){
 				Species species = species_array.get(i);
@@ -477,17 +372,17 @@ public class ReactionNetwork{
 		this.N = new MyMatrix<Double,Species,Reaction>();
 		
 //		int c = 0;
-		Iterator<Reaction> reaction_iterator = this.R.iterator();
+		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
 		while (reaction_iterator.hasNext()){
 			Reaction reaction = reaction_iterator.next();
 			Complex substrate = reaction.getSubstrate();
 			Complex product = reaction.getProduct();
-			MyMultiset<Species> difference = product.sub(substrate);
+			MyMultiset<Species> difference = product.getNode().sub(substrate.getNode());
 			
-//			System.out.println(c + " of " + this.R.size() + ": " + reaction.toString());
+//			System.out.println(c + " of " + this.getReactions().size() + ": " + reaction.toString());
 //			c++;
 			
-			Iterator<Species> species_iterator = this.S.iterator();
+			Iterator<Species> species_iterator = this.getSpecies().iterator();
 			while (species_iterator.hasNext()){
 				Species species = species_iterator.next();
 				
@@ -506,21 +401,21 @@ public class ReactionNetwork{
 		if (this.linkage_classes.size() == 0)
 			this.makeLinkageClasses();
 		
-		this.L = new MyMatrix<Integer, Complex, EquivalenceClass<Complex>>();
+		this.L = new MyMatrix<Integer, Complex, MyEquivalenceClass<Complex>>();
 		
-		Iterator<EquivalenceClass<Complex>> ec_iterator = this.linkage_classes.iterator();
+		Iterator<MyEquivalenceClass<Complex>> ec_iterator = this.linkage_classes.iterator();
 		while (ec_iterator.hasNext()){
-			EquivalenceClass<Complex> ec = ec_iterator.next();
+			MyEquivalenceClass<Complex> ec = ec_iterator.next();
 			
-			ArrayList<Complex> complex_array = this.C.toArrayList();
+			ArrayList<Complex> complex_array = this.getComplexes().toArrayList();
 			for (int i = 0; i < complex_array.size(); i++){
 				Complex complex = complex_array.get(i);
 				
-				MyInteger<Complex,EquivalenceClass<Complex>> entry;
+				MyInteger<Complex,MyEquivalenceClass<Complex>> entry;
 				if (ec.contains(complex))
-					entry = new MyInteger<Complex,EquivalenceClass<Complex>>(new Integer(1), complex, (EquivalenceClass<Complex>)ec);
+					entry = new MyInteger<Complex,MyEquivalenceClass<Complex>>(new Integer(1), complex, (MyEquivalenceClass<Complex>)ec);
 				else
-					entry = new MyInteger<Complex,EquivalenceClass<Complex>>(new Integer(0), complex, (EquivalenceClass<Complex>)ec);
+					entry = new MyInteger<Complex,MyEquivalenceClass<Complex>>(new Integer(0), complex, (MyEquivalenceClass<Complex>)ec);
 
 				this.L.add(entry);
 			}
@@ -570,7 +465,7 @@ public class ReactionNetwork{
 	 * @return The set of complexes.
 	 */
 	public MySet<Complex> getComplexes(){
-		return this.C;
+		return (MySet)this.getNodes();
 	}
 	
 	public MySet<Species> getSpecies(){
@@ -628,7 +523,7 @@ public class ReactionNetwork{
 		return this.A;
 	}
 	
-	public MyMatrix<Integer, Complex, EquivalenceClass<Complex>> getLMatrix() throws Exception{
+	public MyMatrix<Integer, Complex, MyEquivalenceClass<Complex>> getLMatrix() throws Exception{
 		if (this.L == null)
 			this.makeLMatrix();
 		
@@ -638,10 +533,10 @@ public class ReactionNetwork{
 	public String getOctavePsi(){
 		String ret = "psi = [";
 		
-		Iterator<Complex> complex_iterator = this.C.iterator();
+		Iterator<Complex> complex_iterator = this.getComplexes().iterator();
 		while (complex_iterator.hasNext()){
 			Complex complex = complex_iterator.next();
-			if (complex.numberOfDistinctElements() > 0)
+			if (complex.getNode().numberOfDistinctElements() > 0)
 				ret = ret + complex.getPsi() + ", ";
 		}
 		ret = ret.substring(0, ret.length() - 2) + "]'";
@@ -659,21 +554,21 @@ public class ReactionNetwork{
 		if (this.linkage_classes.size() == 0)
 			this.makeLinkageClasses();
 		
-		return this.C.size() - this.linkage_classes.size() - this.getNMatrix().getRankUsingOctave("/tmp/");
+		return this.getComplexes().size() - this.linkage_classes.size() - this.getNMatrix().getRankUsingOctave("/tmp/");
 	}
 	
 	public boolean hasACR() throws Exception{
 		boolean ret = false;
 		
 		if (this.getDeficiency()==1){
-			ArrayList<Complex> array = this.C.toArrayList();
+			ArrayList<Complex> array = this.getComplexes().toArrayList();
 			for (int i = 0; i < array.size(); i++){
 				for (int j = i + 1; j < array.size(); j++){
 					Complex A = array.get(i);
 					Complex B = array.get(j);
 					if (this.isTerminal(A)==false && this.isTerminal(B)==false){
-						if (A.difference(B).numberOfDistinctElements() == 1 ||
-							B.difference(A).numberOfDistinctElements() == 1)
+						if (A.getNode().difference(B.getNode()).numberOfDistinctElements() == 1 ||
+							B.getNode().difference(A.getNode()).numberOfDistinctElements() == 1)
 							return true;
 					}
 				}
@@ -687,8 +582,8 @@ public class ReactionNetwork{
 	}
 		
 	public boolean isWeaklyReversible() throws Exception{
-		Partition<Complex> slcs = this.getStrongLinkageClasses();
-		Iterator<EquivalenceClass<Complex>> iterator = this.getLinkageClasses().iterator();
+		MyPartition<Complex> slcs = this.getStrongLinkageClasses();
+		Iterator<MyEquivalenceClass<Complex>> iterator = this.getLinkageClasses().iterator();
 		while (iterator.hasNext())
 			if (!slcs.contains(iterator.next()))
 				return false;
@@ -696,7 +591,7 @@ public class ReactionNetwork{
 	}
 	
 	public Species getSpeciesById(String id){
-		Iterator<Species> species_iterator = this.S.iterator();
+		Iterator<Species> species_iterator = this.getSpecies().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			if (species.getId().equals(id))
@@ -706,7 +601,7 @@ public class ReactionNetwork{
 	}
 	
 	public Species getSpeciesByName(String name){
-		Iterator<Species> species_iterator = this.S.iterator();
+		Iterator<Species> species_iterator = this.getSpecies().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			if (species.getName().equals(name))
@@ -716,7 +611,7 @@ public class ReactionNetwork{
 	}
 	
 	public Reaction getReactionById(String id){
-		Iterator<Reaction> reaction_iterator = this.R.iterator();
+		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
 		while (reaction_iterator.hasNext()){
 			Reaction reaction = reaction_iterator.next();
 			if (reaction.getId().equals(id))
@@ -726,7 +621,7 @@ public class ReactionNetwork{
 	}
 	
 	public Reaction getReactionByName(String name){
-		Iterator<Reaction> reaction_iterator = this.R.iterator();
+		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
 		while (reaction_iterator.hasNext()){
 			Reaction reaction = reaction_iterator.next();
 			if (reaction.getName().equals(name))
@@ -790,10 +685,10 @@ public class ReactionNetwork{
 			backward_reaction = forward_reaction;
 		
 		// get the corresponding linkage class, which must contain both complexes because they are directly linked
-		EquivalenceClass<Complex> linkage_class = this.getLinkageClasses().getEquivalenceClassByElement(c1);
+		MyEquivalenceClass<Complex> linkage_class = this.getLinkageClasses().getEquivalenceClassByElement(c1);
 		// get the set of reactions attached to the complexes
-		MySet<Reaction> reactions = this.getReactionsConsumingOrProducingComplexes(linkage_class);
-
+		MySet<Reaction> reactions = (MySet)this.getEdges(linkage_class);
+		
 		// fill a new reaction network with the reactions that are not forward_reaction and not backward_reaction
 		ReactionNetwork reaction_network = new ReactionNetwork();
 		Iterator<Reaction> iterator = reactions.iterator();
@@ -874,10 +769,10 @@ public class ReactionNetwork{
 //	}
 	
 	public String[] getSpeciesIds(){
-		String[] ret = new String[this.S.size()];
+		String[] ret = new String[this.getSpecies().size()];
 		
 		int i = 0;
-		Iterator<Species> species_iterator = this.S.iterator();
+		Iterator<Species> species_iterator = this.getSpecies().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			
@@ -889,10 +784,10 @@ public class ReactionNetwork{
 	}
 	
 	public String[] getSpeciesNames(){
-		String[] ret = new String[this.S.size()];
+		String[] ret = new String[this.getSpecies().size()];
 		
 		int i = 0;
-		Iterator<Species> species_iterator = this.S.iterator();
+		Iterator<Species> species_iterator = this.getSpecies().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			
@@ -904,10 +799,10 @@ public class ReactionNetwork{
 	}
 	
 	public String[] getReactionIds(){
-		String[] ret = new String[this.R.size()];
+		String[] ret = new String[this.getReactions().size()];
 		
 		int i = 0;
-		Iterator<Reaction> reaction_iterator = this.R.iterator();
+		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
 		while (reaction_iterator.hasNext()){
 			Reaction reaction = reaction_iterator.next();
 			
@@ -919,10 +814,10 @@ public class ReactionNetwork{
 	}
 	
 	public String[] getReactionNames(){
-		String[] ret = new String[this.R.size()];
+		String[] ret = new String[this.getReactions().size()];
 		
 		int i = 0;
-		Iterator<Reaction> reaction_iterator = this.R.iterator();
+		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
 		while (reaction_iterator.hasNext()){
 			Reaction reaction = reaction_iterator.next();
 			
@@ -938,11 +833,11 @@ public class ReactionNetwork{
 	 * 
 	 * @return True if this strong linkage class is terminal, otherwise false.
 	 */
-	public boolean isTerminal(EquivalenceClass<Complex> strong_linkage_class){
+	public boolean isTerminal(MyEquivalenceClass<Complex> strong_linkage_class){
 		Iterator<Complex> iterator = strong_linkage_class.iterator();		// get the iterator of all complexes of this strong linkage class
 		while (iterator.hasNext()){											// loop over all complexes of this strong linkage class
 			Complex complex = iterator.next();
-			MySet<Complex> neighbours = this.getComplexNeighboursForward(complex);	// get all neighbouring complexes of the current complex in the direction of the edges adjacent to the current complex
+			MySet<Complex> neighbours = (MySet)this.getNodeNeighboursForward(complex);	// get all neighbouring complexes of the current complex in the direction of the edges adjacent to the current complex
 			
 			Iterator<Complex> neighbour_iterator = neighbours.iterator();	// get the iterator of the neighbouring complexes
 			while (neighbour_iterator.hasNext()){							// loop over all neighbouring complexes
@@ -955,138 +850,23 @@ public class ReactionNetwork{
 		return true; // if all complexes which can be reached from inside this strong linkage class are elements of this strong linkage class, then this strong linkage class must be terminal
 	}
 	
-	/**
-	 * Returns the set of reactions which consume given complex.
-	 * 
-	 * @param complex The complex.
-	 * @return The set of reactions consuming the complex.
-	 */
-	public MySet<Reaction> getReactionsConsumingComplex(Complex complex){
-		if (this.substrate_reaction_map.containsKey(complex.toString()))
-			return this.substrate_reaction_map.get(complex.toString());
-		
-		return new MySet<Reaction>();
-	}
-	
-	/**
-	 * Returns the set of reactions which consume the set of given complexes.
-	 * 
-	 * @param complexes Set of complexes.
-	 * @return The set of reactions consuming the given complexes.
-	 */
-	public MySet<Reaction> getReactionsConsumingComplexes(MySet<Complex> complexes){
-		MySet<Reaction> ret = new MySet<Reaction>();
-		
-		Iterator<Complex> iterator = complexes.iterator();
-		while (iterator.hasNext()){
-			Complex complex = iterator.next();
-			ret = ret.union(this.substrate_reaction_map.get(complex.toString()));
-		}
-		
-		return ret;
-	}
-	
-	/**
-	 * Returns the set of reactions which consume or produce the given complex.
-	 * 
-	 * @param complex The complex.
-	 * @return The set of reactions consuming or producing the given complex.
-	 */
-	public MySet<Reaction> getReactionsConsumingOrProducingComplex(Complex complex){
-		MySet<Reaction> consuming_reactions = new MySet<Reaction>();
-		if (this.substrate_reaction_map.containsKey(complex.toString()))
-			consuming_reactions = this.substrate_reaction_map.get(complex.toString());
-		
-		MySet<Reaction> producing_reactions = new MySet<Reaction>();
-		if (this.product_reaction_map.containsKey(complex.toString()))
-			producing_reactions = this.product_reaction_map.get(complex.toString());
-		
-		return consuming_reactions.union(producing_reactions);
-	}
-	
-	/**
-	 * Returns the set of reactions which consume or produce the set of given complexes.
-	 * 
-	 * @param complexes Set of complexes.
-	 * @return The set of reactions consuming or producing the given complexes.
-	 */
-	public MySet<Reaction> getReactionsConsumingOrProducingComplexes(MySet<Complex> complexes){
-		MySet<Reaction> ret = new MySet<Reaction>();
-		
-		Iterator<Complex> iterator = complexes.iterator();
-		while (iterator.hasNext()){
-			Complex complex = iterator.next();
-			ret = ret.union(this.substrate_reaction_map.get(complex.toString()).union(this.product_reaction_map.get(complex.toString())));
-		}
-		
-		return ret;
-	}
-	
-	/**
-	 * Returns directed neighbours of given complex.
-	 * 
-	 * @param complex The complex.
-	 * @return Set of directed neighbours of the given complex.
-	 */
-	public MySet<Complex> getComplexNeighboursForward(Complex complex){
-		if (this.forward_neighbours.containsKey(complex.toString()))
-			return this.forward_neighbours.get(complex.toString());
-		
-		return new MySet<Complex>();
-	}
-	
-	public MySet<Complex> getComplexNeighboursBackward(Complex complex){
-		if (this.backward_neighbours.containsKey(complex.toString()))
-			return this.backward_neighbours.get(complex.toString());
-		
-		return new MySet<Complex>();
-	}
-	
-	/**
-	 * Returns undirected neighbours of given complex.
-	 * 
-	 * @param complex The complex.
-	 * @return Set of undirected neighbours of the given complex.
-	 */
-	public MySet<Complex> getComplexNeighboursForwardBackward(Complex complex){
-		MySet<Complex> forwards = new MySet<Complex>();
-		MySet<Complex> backwards = new MySet<Complex>();
-		
-		if (this.forward_neighbours.containsKey(complex.toString()))
-			forwards = this.forward_neighbours.get(complex.toString());
-		
-		if (this.backward_neighbours.containsKey(complex.toString()))
-			backwards = this.backward_neighbours.get(complex.toString());
-		
-		return forwards.union(backwards);
-	}
-	
-	/**
-	 * Computes the shortest path between two subnetworks.
-	 * 
-	 * @param subset1 First subset.
-	 * @param subset2 Second subset.
-	 * @param superset The superset.
-	 * @return MySet<Complex> containing the complexes connecting the two networks or null if superset is not a superset of one of the two subsets.
-	 * @throws Exception
-	 */
 	public MySet<Complex> shortestPath(MySet<Complex> subset1, MySet<Complex> subset2, MySet<Complex> superset) throws Exception{
 		if (!superset.containsAll(subset1) || !superset.containsAll(subset2))
 			return null;
 		
-		Complex complex1 = subset1.head();
-		Complex complex2 = subset2.head();
+		Complex node1 = subset1.head();
+		Complex node2 = subset2.head();
 		
-		Complex source = new Complex().addSpecies(new Species("source"));
-		Complex sink = new Complex().addSpecies(new Species("sink"));
+		Complex source = (new Complex()).addSpecies(new Species("source"));
+		Complex sink = (new Complex()).addSpecies(new Species("sink"));
 		
-		Reaction reaction1 = new Reaction("source", source, complex1);
-		Reaction reaction2 = new Reaction("sink", complex2, sink);
+		Reaction reaction1 = new Reaction("source_reaction", source, node1);
+		Reaction reaction2 = new Reaction("sink_reaction", node2, sink);
 		
 		this.addReaction(reaction1);
 		this.addReaction(reaction2);
 		
-		MySet<Complex> route = this.dijkstra(source, sink);
+		MySet<Complex> route = (MySet)this.dijkstra(source, sink);
 		route.remove(source);
 		route.remove(sink);
 		
@@ -1094,136 +874,5 @@ public class ReactionNetwork{
 		this.removeReaction(reaction2);
 		
 		return route;
-	}
-	
-	/**
-	 * Computes shortest path between to complexes in reaction network.
-	 * 
-	 * @param source The source complex.
-	 * @param sink The sink complex.
-	 * @return MySet<Complex> containing the complexes between source and sink.
-	 */
-	public MySet<Complex> dijkstra(Complex source, Complex sink){
-		MySet<Complex> nodes = this.getComplexes();
-		
-		int[] dist = new int[nodes.size()];
-		int[] prev = new int[nodes.size()];
-		
-		dist[nodes.getIndex(source)] = 0;
-		MyPriorityQueue<ComplexDistance> pq = new MyPriorityQueue<ComplexDistance>();
-		
-		// fill priority queue
-		for (int i = 0; i < nodes.size(); i++){
-			if (i != nodes.getIndex(source)){
-				dist[i] = Integer.MAX_VALUE;
-				prev[i] = -1;
-			}
-			pq.add(new ComplexDistance(nodes.toArrayList().get(i), dist[i]));
-		}
-		
-		// traverse graph, collect distances, precursors and update queue
-		while (pq.size() > 0){
-			ComplexDistance cd = pq.poll();
-			Complex u = cd.getFirstElement();
-			if (u.equals(sink))
-				break;
-			
-			MySet<Complex> neighbours = this.getComplexNeighboursForwardBackward(u);
-			Iterator<Complex> iterator = neighbours.iterator();
-			while (iterator.hasNext()){
-				Complex v = iterator.next();
-				int alt = dist[nodes.getIndex(u)] + 1;
-				if (alt < dist[nodes.getIndex(v)]){
-					// save data about old pair
-					ComplexDistance cd_rm = new ComplexDistance(v, dist[nodes.getIndex(v)]);
-					
-					// update data
-					dist[nodes.getIndex(v)] = alt;
-					prev[nodes.getIndex(v)] = nodes.getIndex(u);
-					
-					// remove old pair and insert updated pair
-					pq.remove(cd_rm);
-					pq.add(new ComplexDistance(v, alt));
-				}
-			}
-		}
-		
-		MySet<Complex> route = new MySet<Complex>();
-		Complex node = sink;
-		route.add(node);
-		while (!node.equals(source)){
-			if (prev[nodes.getIndex(node)] < 0)
-				return null;
-			
-			node = nodes.toArrayList().get(prev[nodes.getIndex(node)]);
-			route.add(node);
-		}
-		
-		return route;
-	}
-	
-	/**
-	 * Pair of complex and distance.
-	 * 
-	 * @author neigenfind
-	 *
-	 */
-	static class ComplexDistance extends MyPair<Complex, Integer> implements Comparable<ComplexDistance>{
-		/**
-		 * Constructor.
-		 * 
-		 * @param first_element The complex.
-		 * @param second_element The initial distance.
-		 */
-		public ComplexDistance(Complex first_element, Integer second_element) {
-			super(first_element, second_element);
-		}
-		
-		/**
-		 * Makes string from object.
-		 */
-		public String toString(){
-			return "(" + this.getFirstElement() + ", " + this.getSecondElement().toString() + ")";
-		}
-		
-		/**
-		 * Compares two ComplexDistance objects with respect to distance.
-		 * 
-		 * @param cd1 First ComplexDistance object.
-		 * @param cd2 Second ComplexDistance object.
-		 * @return -1, 0 or 1.
-		 */
-		public int compare(ComplexDistance cd1, ComplexDistance cd2) {
-			return cd1.compareTo(cd2);
-		}
-		
-		/**
-		 * Compares this ComplexDistance object with another one.
-		 * 
-		 * @param cd The other ComplexDistance object.
-		 * @return -1, 0 or 1.
-		 */
-		public int compareTo(ComplexDistance cd) {
-			return this.getSecondElement() - cd.getSecondElement();
-		}
-		
-		/**
-		 * Compares two ComplexDistance objects with respect to its string.
-		 * 
-		 * @param The object to compare with.
-		 * return -1, 0 or 1.
-		 */
-		public boolean equals(Object o) {
-			return this.toString().equals(((ComplexDistance)o).toString());
-		}
-		
-		/**
-		 * Returns hash code of this ComplexDistance object with respect to its string.
-		 * 
-		 * @return The hash code.
-		 */
-		public int hashCode(){
-			return (this.toString()).hashCode();
-		}
 	}
 }
