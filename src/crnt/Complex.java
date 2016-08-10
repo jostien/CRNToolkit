@@ -25,54 +25,55 @@ import java.util.*;
 import singular.*;
 import miscellaneous.*;
 
-public class Complex extends MyMultiset<Species>{
+public class Complex extends MyNode<MyMultiset<Species>>{
 	public Complex(){
+		super(new MyMultiset<Species>());
 	}
 	
 	public Complex(Species[] species_array){
 		for (int i = 0; i < species_array.length; i++)
-			this.add(species_array[i]);
+			this.getNode().add(species_array[i]);
 	}
 	
 	public Complex(Species[] species_array, Double[] occurences){
 		for (int i = 0; i < species_array.length; i++)
-			this.add(species_array[i], occurences[i]);
+			this.getNode().add(species_array[i], occurences[i]);
 	}
 	
 	public Complex addSpecies(Species species){
 		if (!species.getName().equals("0"))
-			this.add(species);
+			this.getNode().add(species);
 		
 		return this;
 	}
 	
 	public Complex addSpecies(Species species, double occurences){
 		if (!species.getName().equals("0")){
-			this.add(species);
+			this.getNode().add(species);
 		}
 		
 		return this;
 	}
 	
 	public Species getSpecies(int i){
-		if (i >= this.numberOfDistinctElements())
+		if (i >= this.getNode().numberOfDistinctElements())
 			return null;
 		
-		Object[] array = this.getListOfDistinctElements();
+		Object[] array = this.getNode().getListOfDistinctElements();
 		return (Species)array[i];
 	}
 	
 	public MySet<Species> getSpecies(){
-		return this.toMySet();
+		return this.getNode().toMySet();
 	}
 	
 	public String getPsi(){
 		String ret = "";
 
-		Iterator<Species> species_iterator = this.iterator();
+		Iterator<Species> species_iterator = this.getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
-			Double c = this.getNumberOfOccurences(species);
+			Double c = this.getNode().getNumberOfOccurences(species);
 			if (c != 1)
 				ret = ret + "c_" + species.getName() + "^" + c + "*";
 			else
@@ -88,10 +89,10 @@ public class Complex extends MyMultiset<Species>{
 	public Monomial getMonomial(){
 		Monomial ret = new Monomial();
 		
-		Iterator<Species> species_iterator = this.iterator();
+		Iterator<Species> species_iterator = this.getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
-			Double c = this.getNumberOfOccurences(species);
+			Double c = this.getNode().getNumberOfOccurences(species);
 			
 			Variable variable = new Variable(species.getName(), c.intValue());
 			ret.addVariable(variable);
@@ -113,13 +114,29 @@ public class Complex extends MyMultiset<Species>{
 	
 	public Complex clone(){
 		Complex ret = new Complex();
-		Iterator<Species> species_iterator = this.iterator();
+		Iterator<Species> species_iterator = this.getNode().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next().clone();
-			ret.add(species, this.getNumberOfOccurences(species));
+			ret.getNode().add(species, this.getNode().getNumberOfOccurences(species));
 		}
 		return ret;
 	}
+
+	public int compareTo(MyNode<MyMultiset<Species>> complex){
+		return this.toString().compareTo(complex.toString());
+	}	
 	
+	public boolean equals(Object o){
+		return this.toString().equals(((Complex)o).toString());
+	}
+	
+	public int hashCode(){
+		return this.toString().hashCode();
+	}
+	
+	public String toString(){
+		return this.getNode().toString();
+	}
+
 	public static String ID_PREFIX = "C_";
 }
