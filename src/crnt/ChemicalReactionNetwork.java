@@ -110,7 +110,7 @@ public class ChemicalReactionNetwork extends ReactionNetwork{
 				outFile.write("v" + Integer.toString(count) + " = " + Double.toString(this.K.get(currentReaction).getRateConstant()));				
 				MySet<Species> currentSubstrate = currentReaction.getSubstrate().getSpecies().clone();								
 				while (!currentSubstrate.isEmpty()){
-					Double currentOccurence = currentReaction.getSubstrate().getNumberOfOccurences(currentSubstrate.head());
+					Double currentOccurence = currentReaction.getSubstrate().getNode().getNumberOfOccurences(currentSubstrate.head());
 					while(currentOccurence>0){
 						outFile.write(" * ");
 						outFile.write(currentSubstrate.head().toString());
