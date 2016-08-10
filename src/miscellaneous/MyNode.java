@@ -1,5 +1,4 @@
-/* CRNToolkit, Copyright (c) 2010-2016 Jost Neigenfind  <jostie@gmx.de>,
- * Sergio Grimbs, Zoran Nikoloski
+/* CRNToolkit, Copyright (c) 2010-2016 Jost Neigenfind  <jostie@gmx.de>
  * 
  * A Java toolkit for Chemical Reaction Networks
  *
@@ -20,40 +19,73 @@
 
 package miscellaneous;
 
-import java.util.*;
+import java.lang.reflect.Method;
 
-public class MyNode<E> extends ArrayList<MyNode<E>>{
-	private static final long serialVersionUID = 1L;
+public class MyNode<E> implements Comparable<MyNode<E>>{
+	private String id;
+	private E node; 
+
+	public MyNode(){
+		this.id = null;
+		this.node = null;
+	}
 	
-	private E e;
-	private MyNode<E> parent;
-	private int position;
+	public MyNode(String id){
+		this.node = null;
+		this.id = id;
+	}
 	
-	public MyNode(E e, MyNode<E> parent){
-		this.e = e;
+	public MyNode(E node){
+		this.id = null;
+		this.node = node;
+	}
+	
+	public MyNode(String id, E node){
+		this.id = id;
+		this.node = node;
+	}
+	
+	public String getId(){
+		return this.id;
+	}
+	
+	public E getNode(){
+		return this.node;
+	}
+	
+	public MyNode<E> clone(){
+		// if there is a clone method in node object ...
+		try {
+			Method method = this.node.getClass().getMethod("clone", new Class[]{});
+			if (method != null)
+				return new MyNode<E>(this.id, (E)method.invoke(this.node, new Object[]{}));
+		} catch(Exception e){
+		}
 		
-		this.parent = parent;
+		// ... copy reference
+		return new MyNode<E>(this.id, this.node);
 	}
 	
-	public boolean isRoot(){
-		return this.parent == null;
-	}
-	
-	public boolean hasCild(){
-		return this.size() > 0;
-	}
-	
-	public int getPosition(){
-		return this.position;
-	}
-	
-	public MyNode<E> setPosition(int position){
-		this.position = position;
+	public String toString(){
+		// nodes are returned in brackets "(...)" to distinguish it from the contained object
+		if (this.id != null && this.node == null)
+			return "(" + this.id.toString() + ")";
 		
-		return this;
+		if (this.id == null && this.node != null)
+			return "(" + this.node.toString() + ")";
+		
+		return "(" + this.id + " := " + this.node.toString() + ")";
 	}
 	
-	public E getValue(){
-		return this.e;
+	public int compareTo(MyNode<E> node) {
+		return this.toString().compareTo(node.toString());
+	}
+	
+	public boolean equals(Object o) {
+		return this.toString().equals(((MyNode<E>)o).toString());
+	}
+	
+	public int hashCode(){
+		return this.toString().hashCode();
 	}
 }
