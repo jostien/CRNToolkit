@@ -249,7 +249,7 @@ public class COBRAParser{
 						this.reformatSpeciesName(species_reference.getSpeciesInstance().getName()),
 						compartment);
 				
-				ret.getNode().add(species, species_reference.getStoichiometry());
+				ret.getObject().add(species, species_reference.getStoichiometry());
 			}
 		}
 		

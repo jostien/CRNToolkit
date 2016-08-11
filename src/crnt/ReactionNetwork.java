@@ -106,14 +106,14 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		this.getSpecies().addAll(reaction.getProduct().getSpecies());		// add all species of the substrate complex to the set of species
 
 		// add compartments of substrates
-		Iterator<Species> species_iterator = reaction.getSubstrate().getNode().iterator();
+		Iterator<Species> species_iterator = reaction.getSubstrate().getObject().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			this.compartments.add(species.getCompartment());
 		}
 		
 		// add compartments of products
-		species_iterator = reaction.getProduct().getNode().iterator();
+		species_iterator = reaction.getProduct().getObject().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			this.compartments.add(species.getCompartment());
@@ -124,7 +124,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		//#################################################
 		
 		Complex substrate = reaction.getSubstrate();
-		species_iterator = substrate.getNode().iterator();
+		species_iterator = substrate.getObject().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			MyMultiset<Complex> complexes = new MyMultiset<Complex>();
@@ -135,7 +135,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		}
 		
 		Complex product = reaction.getProduct();
-		species_iterator = product.getNode().iterator();
+		species_iterator = product.getObject().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			MyMultiset<Complex> complexes = new MyMultiset<Complex>();
@@ -170,7 +170,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	 * @param complex The complex whose species references are to be removed.
 	 */
 	private void removeSpeciesComplexReferences(Complex complex){
-		Iterator<Species> species_iterator = complex.getNode().iterator();
+		Iterator<Species> species_iterator = complex.getObject().iterator();
 		while (species_iterator.hasNext()){
 			Species species = species_iterator.next();
 			
@@ -291,8 +291,8 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 				Species species = species_iterator.next();
 				
 				MyEntry<Double,Species,Complex> entry;
-				if (complex.getNode().contains(species))
-					entry = new MyDouble<Species,Complex>(complex.getNode().getNumberOfOccurences(species), species, complex);
+				if (complex.getObject().contains(species))
+					entry = new MyDouble<Species,Complex>(complex.getObject().getNumberOfOccurences(species), species, complex);
 				else
 					entry = new MyDouble<Species,Complex>(new Double(0), species, complex);
 				
@@ -347,7 +347,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 			Reaction reaction = reaction_array.get(j);
 			Complex substrate = reaction.getSubstrate();
 			Complex product = reaction.getProduct();
-			MyMultiset<Species> difference = product.getNode().sub(substrate.getNode());
+			MyMultiset<Species> difference = product.getObject().sub(substrate.getObject());
 			
 //			System.out.println(j + " of " + this.getReactions().size() + ": " + reaction.toString());
 
@@ -377,7 +377,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 			Reaction reaction = reaction_iterator.next();
 			Complex substrate = reaction.getSubstrate();
 			Complex product = reaction.getProduct();
-			MyMultiset<Species> difference = product.getNode().sub(substrate.getNode());
+			MyMultiset<Species> difference = product.getObject().sub(substrate.getObject());
 			
 //			System.out.println(c + " of " + this.getReactions().size() + ": " + reaction.toString());
 //			c++;
@@ -536,7 +536,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		Iterator<Complex> complex_iterator = this.getComplexes().iterator();
 		while (complex_iterator.hasNext()){
 			Complex complex = complex_iterator.next();
-			if (complex.getNode().numberOfDistinctElements() > 0)
+			if (complex.getObject().numberOfDistinctElements() > 0)
 				ret = ret + complex.getPsi() + ", ";
 		}
 		ret = ret.substring(0, ret.length() - 2) + "]'";
@@ -567,8 +567,8 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 					Complex A = array.get(i);
 					Complex B = array.get(j);
 					if (this.isTerminal(A)==false && this.isTerminal(B)==false){
-						if (A.getNode().difference(B.getNode()).numberOfDistinctElements() == 1 ||
-							B.getNode().difference(A.getNode()).numberOfDistinctElements() == 1)
+						if (A.getObject().difference(B.getObject()).numberOfDistinctElements() == 1 ||
+							B.getObject().difference(A.getObject()).numberOfDistinctElements() == 1)
 							return true;
 					}
 				}

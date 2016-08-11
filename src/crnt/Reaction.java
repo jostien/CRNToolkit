@@ -135,9 +135,9 @@ public class Reaction extends MyEdge<MyMultiset<Species>>{
 	}
 	
 	public boolean containsSpecies(Species species){
-		if (((Complex)this.getSource()).getNode().contains(species))
+		if (((Complex)this.getSource()).getObject().contains(species))
 			return true;
-		if (((Complex)this.getSink()).getNode().contains(species))
+		if (((Complex)this.getSink()).getObject().contains(species))
 			return true;
 		return false;
 	}
@@ -151,7 +151,7 @@ public class Reaction extends MyEdge<MyMultiset<Species>>{
 	}
 	
 	public String toLaTeXString() throws Exception{
-		return "R_{" + this.id + "}" + " := " + ((Complex)this.getSource()).getNode().toLaTeXString() + " \\rightarrow " + ((Complex)this.getSink()).getNode().toLaTeXString();
+		return "R_{" + this.id + "}" + " := " + ((Complex)this.getSource()).getObject().toLaTeXString() + " \\rightarrow " + ((Complex)this.getSink()).getObject().toLaTeXString();
 	}
 	
 	public int compareTo(Reaction reaction){

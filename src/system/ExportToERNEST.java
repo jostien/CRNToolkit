@@ -71,7 +71,7 @@ public class ExportToERNEST {
 				while (iteratorSubstrateSpecies.hasNext()){					
 					Species substrateSpecies = iteratorSubstrateSpecies.next();					
 					substrateSpeciesString = substrateSpeciesString + "'" + substrateSpecies.toString() + "'";
-					substrateStoichiometryString = substrateStoichiometryString + complexSubstrate.getNode().getNumberOfOccurences(substrateSpecies);
+					substrateStoichiometryString = substrateStoichiometryString + complexSubstrate.getObject().getNumberOfOccurences(substrateSpecies);
 					if (iteratorSubstrateSpecies.hasNext()){
 						substrateSpeciesString = substrateSpeciesString + ",";
 						substrateStoichiometryString = substrateStoichiometryString + " ";
@@ -88,7 +88,7 @@ public class ExportToERNEST {
 				while (iteratorProductSpecies.hasNext()){					
 					Species productSpecies = iteratorProductSpecies.next();					
 					productSpeciesString = productSpeciesString + "'" + productSpecies.toString() + "'";
-					productStoichiometryString = productStoichiometryString + complexProduct.getNode().getNumberOfOccurences(productSpecies);
+					productStoichiometryString = productStoichiometryString + complexProduct.getObject().getNumberOfOccurences(productSpecies);
 					if (iteratorProductSpecies.hasNext()){
 						productSpeciesString = productSpeciesString + ",";
 						productStoichiometryString = productStoichiometryString + " ";
