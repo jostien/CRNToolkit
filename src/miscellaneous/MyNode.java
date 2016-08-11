@@ -23,26 +23,26 @@ import java.lang.reflect.Method;
 
 public class MyNode<E> implements Comparable<MyNode<E>>{
 	private String id;
-	private E object; 
+	private E e; 
 
 	public MyNode(){
 		this.id = null;
-		this.object = null;
+		this.e = null;
 	}
 	
 	public MyNode(String id){
-		this.object = null;
+		this.e = null;
 		this.id = id;
 	}
 	
-	public MyNode(E node){
+	public MyNode(E e){
 		this.id = null;
-		this.object = node;
+		this.e = e;
 	}
 	
-	public MyNode(String id, E node){
+	public MyNode(String id, E e){
 		this.id = id;
-		this.object = node;
+		this.e = e;
 	}
 	
 	public String getId(){
@@ -50,31 +50,31 @@ public class MyNode<E> implements Comparable<MyNode<E>>{
 	}
 	
 	public E getObject(){
-		return this.object;
+		return this.e;
 	}
 	
 	public MyNode<E> clone(){
 		// if there is a clone method in node object ...
 		try {
-			Method method = this.object.getClass().getMethod("clone", new Class[]{});
+			Method method = this.e.getClass().getMethod("clone", new Class[]{});
 			if (method != null)
-				return new MyNode<E>(this.id, (E)method.invoke(this.object, new Object[]{}));
+				return new MyNode<E>(this.id, (E)method.invoke(this.e, new Object[]{}));
 		} catch(Exception e){
 		}
 		
 		// ... copy reference
-		return new MyNode<E>(this.id, this.object);
+		return new MyNode<E>(this.id, this.e);
 	}
 	
 	public String toString(){
 		// nodes are returned in brackets "(...)" to distinguish it from the contained object
-		if (this.id != null && this.object == null)
+		if (this.id != null && this.e == null)
 			return "(" + this.id.toString() + ")";
 		
-		if (this.id == null && this.object != null)
-			return "(" + this.object.toString() + ")";
+		if (this.id == null && this.e != null)
+			return "(" + this.e.toString() + ")";
 		
-		return "(" + this.id + " := " + this.object.toString() + ")";
+		return "(" + this.id + " := " + this.e.toString() + ")";
 	}
 	
 	public int compareTo(MyNode<E> node) {
