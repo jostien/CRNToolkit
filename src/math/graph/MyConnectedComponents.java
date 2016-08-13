@@ -17,16 +17,17 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.graph;
 
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedList;
 
+import math.set.MyEquivalenceRelation;
+import math.set.MyPair;
+import math.set.MySet;
 import system.parsers.simple.SimpleParser;
-import miscellaneous.MyPair;
 import miscellaneous.MyPriorityQueue;
-import miscellaneous.MySet;
 
 public class MyConnectedComponents implements MyEquivalenceRelation<MyNode>{
 	private MyGraph G;

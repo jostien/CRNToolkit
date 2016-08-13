@@ -18,9 +18,10 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.linalg;
 
-import java.util.ArrayList;
+import math.set.MySet;
+import system.process.octave.MyOctaveRank;
 
 public class MySimpleMatrix<FirstD,SecondD> {
 	private MySet<FirstD> first_dimension;
@@ -101,5 +102,16 @@ public class MySimpleMatrix<FirstD,SecondD> {
 		}
 	
 		return buffer.append("]").toString();
+	}
+	
+	public int getRankUsingOctave(String path) throws Exception{
+		MyOctaveRank rank = new MyOctaveRank();
+		rank.setProgramName("octave");
+		rank.setProgramPath("");
+		rank.setInputPath(path);
+		rank.setOutputPath(rank.getInputPath());
+		rank.makeInputFile(this.toOctaveString());
+		rank.run();
+		return rank.parseOutputFile();
 	}
 }

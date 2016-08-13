@@ -18,7 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.set;
 
 // NOTE : This implementation is not fail safe yet.
 // This means, it is not guaranteed that the equivalence classes are

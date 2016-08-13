@@ -17,12 +17,13 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.graph;
 
 import java.util.HashMap;
 import java.util.Iterator;
 
-import miscellaneous.MySet;
+import math.set.MyEquivalenceRelation;
+import math.set.MySet;
 
 public class MyStronglyConnectedComponents implements MyEquivalenceRelation<MyNode>{
 	private MyGraph G;											// the graph the equivalence relation is based on

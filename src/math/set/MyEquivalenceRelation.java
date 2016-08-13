@@ -17,7 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.set;
 
 public interface MyEquivalenceRelation<A> {
 	public boolean isEqual(A a, A b) throws Exception;

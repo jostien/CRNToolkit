@@ -22,6 +22,9 @@ package crnt;
 
 import java.util.*;
 
+import math.graph.MyNode;
+import math.set.MyMultiset;
+import math.set.MySet;
 import singular.*;
 import miscellaneous.*;
 

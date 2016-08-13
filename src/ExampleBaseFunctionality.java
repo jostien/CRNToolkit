@@ -21,6 +21,10 @@
 import java.util.Iterator;
 
 import crnt.*;
+import math.set.MyEquivalenceClass;
+import math.set.MyMultiset;
+import math.set.MyPartition;
+import math.set.MySet;
 import miscellaneous.*;
 import system.parsers.simple.SimpleParser;
 

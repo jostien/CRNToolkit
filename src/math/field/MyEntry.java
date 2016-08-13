@@ -18,7 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.field;
 
 public class MyEntry<Entry,FirstD,SecondD> implements Comparable<MyEntry<Entry,FirstD,SecondD>>{
 	private Entry entry;
@@ -96,11 +96,11 @@ public class MyEntry<Entry,FirstD,SecondD> implements Comparable<MyEntry<Entry,F
 	public String toString(){
 		// not sure anymore, why to add the entry string for comparison, seems to be not necessary and therefore switched to comment
 		if (this.isComparatorToGeneral())
-			return "" + this.first_dimension.toString() + " " + this.second_dimension.toString();// + " " + this.entry.toString();
+			return this.first_dimension.toString() + " " + this.second_dimension.toString();// + " " + this.entry.toString();
 		if (this.isComparatorToFirstDimension())
-			return "" + this.first_dimension.toString();// + " " + this.entry.toString();
+			return this.first_dimension.toString();// + " " + this.entry.toString();
 		if (this.isComparatorToSecondDimension())
-			return "" + this.second_dimension.toString();// + " " + this.entry.toString();
+			return this.second_dimension.toString();// + " " + this.entry.toString();
 		return null;
 	}
 	
@@ -167,6 +167,42 @@ public class MyEntry<Entry,FirstD,SecondD> implements Comparable<MyEntry<Entry,F
 	//-------------------------------------------------------------------------------
 	//						methods that have to be implemented
 	//-------------------------------------------------------------------------------
+	
+	public Boolean isEqual(Integer i){
+		return new Boolean(false);
+	}
+	
+	public Boolean isLess(Integer i){
+		return new Boolean(false);
+	}
+	
+	public Boolean isGreater(Integer i){
+		return new Boolean(false);
+	}
+	
+	public Boolean isEqual(Double d){
+		return new Boolean(false);
+	}
+	
+	public Boolean isLess(Double d){
+		return new Boolean(false);
+	}
+	
+	public Boolean isGreater(Double d){
+		return new Boolean(false);
+	}
+	
+	public Boolean isEqual(MyEntry<Entry,FirstD,SecondD> entry){
+		return new Boolean(false);
+	}
+	
+	public Boolean isLess(MyEntry<Entry,FirstD,SecondD> entry){
+		return new Boolean(false);
+	}
+	
+	public Boolean isGreater(MyEntry<Entry,FirstD,SecondD> entry){
+		return new Boolean(false);
+	}
 	
 	public Boolean isZero(){
 		return new Boolean(false);

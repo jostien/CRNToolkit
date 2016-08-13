@@ -25,13 +25,16 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.*;
 
+import math.field.MyDouble;
+import math.linalg.MyMatrix;
+import math.set.MySet;
 import singular.*;
 
 import miscellaneous.*;
 
 public class ChemicalReactionNetwork extends ReactionNetwork{
 	private HashMap<Reaction, RateConstant> K;
-	private MyMatrix<Double, Reaction, Complex> Ik;
+	private MyMatrix<Reaction, Complex> Ik;
 	
 	public ChemicalReactionNetwork() throws Exception{
 		this.K = new HashMap<Reaction, RateConstant>();
@@ -59,7 +62,7 @@ public class ChemicalReactionNetwork extends ReactionNetwork{
 	 * Creates Ik matrix.
 	 */
 	public void makeIkMatrix(){
-		this.Ik = new MyMatrix<Double,Reaction,Complex>();
+		this.Ik = new MyMatrix<Reaction,Complex>();
 		
 		ArrayList<Reaction> reaction_array = this.getReactions().toArrayList();
 		ArrayList<Complex> complex_array = this.getComplexes().toArrayList();
@@ -165,13 +168,13 @@ public class ChemicalReactionNetwork extends ReactionNetwork{
 		
 		MySet<Species> species = this.getSpecies();
 		ArrayList<Species> species_array = species.toArrayList();
-		MyMatrix<Double,Species,Reaction> N = this.getNMatrix();
+		MyMatrix<Species,Reaction> N = this.getNMatrix();
 		Ideal ret = new Ideal("I");
 		for (int i = 0; i < N.getHeight(); i++){
 			Polynomial polynomial = new Polynomial(species_array.get(i).getName());
 			for (int j = 0; j < N.getWidth(); j++){
 				if (!N.getEntry(i, j).isZero()){
-					int coeff = (int)N.getEntry(i, j).getEntry().intValue();
+					int coeff = ((Integer)N.getEntry(i, j).getEntry()).intValue();
 					
 					Monomial monomial = fluxes.get(j).clone();
 					monomial.setCoefficient(coeff);
@@ -202,20 +205,20 @@ public class ChemicalReactionNetwork extends ReactionNetwork{
 		return ret.toSingularString();
 	}
 	
-	public MyMatrix<Double, Reaction, Complex> getIkMatrix() throws Exception{
+	public MyMatrix<Reaction, Complex> getIkMatrix() throws Exception{
 		if (this.Ik == null)
 			this.makeIkMatrix();
 		
 		return this.Ik;
 	}
 	
-	public MyMatrix<Double,Reaction,Complex> getRandomIkMatrix(){
+	public MyMatrix<Reaction,Complex> getRandomIkMatrix(){
 		if (this.Ik == null)
 			this.makeIkMatrix();
 		
 		Random rand = new Random();
 		
-		MyMatrix<Double,Reaction,Complex> ret = new MyMatrix<Double,Reaction,Complex>();
+		MyMatrix<Reaction,Complex> ret = new MyMatrix<Reaction,Complex>();
 		for (int i = 0; i < this.Ik.getHeight(); i++){
 			for (int j = 0; j < this.Ik.getWidth(); j++){
 				MyDouble<Reaction,Complex> entry;

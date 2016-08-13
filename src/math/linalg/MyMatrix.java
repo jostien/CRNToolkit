@@ -18,10 +18,9 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.linalg;
 
-import system.*;
-import system.process.MyProcess;
+import system.parsers.simple.SimpleParser;
 import system.process.octave.MyOctaveKernel;
 import system.process.octave.MyOctaveRank;
 import system.process.octave.MyOctaveRref;
@@ -32,12 +31,30 @@ import java.util.*;
 import java.io.*;
 
 import ch.javasoft.polco.adapter.*;
+import crnt.Complex;
+import crnt.Reaction;
+import crnt.ReactionNetwork;
+import crnt.Species;
+import math.field.MyDouble;
+import math.field.MyEntry;
+import math.set.MySet;
 
-public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,SecondD>{ //extends Array2DRowRealMatrix{	
+public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 	private static final long serialVersionUID = 1L;
 	
-	private MySet<MyEntry<Entry,FirstD,SecondD>> data;	// consists of the entries of the matrix
-	private MyEntry<Entry,FirstD,SecondD>[][] matrix;
+	private MySet<FirstD> first_dimension_set;
+	private MySet<SecondD> second_dimension_set;
+	private MyEntry<?,FirstD,SecondD>[][] matrix;
+	
+	public static void main(String[] args) throws Exception{
+		ReactionNetwork reaction_network = (new SimpleParser()).parse(System.getProperty("user.dir") + "/examples/simple/Feinberg1995a_example_4.7");
+		
+		MyMatrix<Species,Reaction> N = reaction_network.getNMatrix();
+		System.out.println(N.toString());
+		System.out.println(N.toOctaveString());
+		
+		System.out.println(N.getRankUsingOctave("/tmp"));
+	}
 	
 	// -------------------------------------------------------------------------------------------
 	//                          Methods necessary for data management
@@ -48,35 +65,43 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 */
 	public MyMatrix(){
 		super();
-		
-		this.setFirstDimensionSet(null);
-		this.setSecondDimensionSet(null);
-		
-		this.data = new MySet<MyEntry<Entry,FirstD,SecondD>>();
+
 		this.matrix = null;
+		this.first_dimension_set = null;
+		this.second_dimension_set = null;
 	}
 	
-	/**
-	 * Constructor.
-	 */
-	public MyMatrix(MySet<FirstD> first_dimension, MySet<SecondD> second_dimension){
-		super(first_dimension, second_dimension);
+	public MySet<FirstD> getFirstDimensionSet(){
+		return this.first_dimension_set;
+	}
+	
+	public MySet<SecondD> getSecondDimensionSet(){
+		return this.second_dimension_set;
+	}
+	
+	public MyEntry<?,FirstD,SecondD> getEntry(int i, int j){
+		this.check();
 		
-		this.data = new MySet<MyEntry<Entry,FirstD,SecondD>>();
-		this.matrix = null;
+		return this.matrix[i][j];
 	}
 	
-	/**
-	 * Add an entry.
-	 * 
-	 * @param entry The entry to add.
-	 */
-	public void add(MyEntry<Entry,FirstD,SecondD> entry){
-		this.data.add(entry);
+	// this is not complete yet
+	public void setEntry(int i, int j, MyEntry<?,FirstD,SecondD> entry){
+		this.check();
+		
+		this.matrix[i][j] = entry;
 	}
 	
-	public boolean contains(MyEntry<Entry,FirstD,SecondD> entry){
-		return this.data.contains(entry);
+	public FirstD getFirstDimension(int i){
+		this.check();
+		
+		return this.getFirstDimensionSet().toArrayList().get(i);
+	}
+	
+	public SecondD getSecondDimension(int j){
+		this.check();
+		
+		return this.getSecondDimensionSet().toArrayList().get(j);
 	}
 	
 	/**
@@ -85,15 +110,25 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * @return A set of column vectors.
 	 */
 	private void makeMatrix(){
+		this.first_dimension_set = new MySet<FirstD>();
+		this.second_dimension_set = new MySet<SecondD>();
+		
+		Iterator<MyEntry<?,FirstD,SecondD>> entry_iterator = this.iterator();
+		while (entry_iterator.hasNext()){
+			MyEntry<?,FirstD,SecondD> entry = entry_iterator.next();
+			this.first_dimension_set.add(entry.getFirstDimension());
+			this.second_dimension_set.add(entry.getSecondDimension());
+		}
+		
 		// for the column vectors, accessed by the second dimension
-		HashMap<SecondD,MyVector<Entry,FirstD,SecondD>> hm = new HashMap<SecondD,MyVector<Entry,FirstD,SecondD>>();
-		ArrayList<MyEntry<Entry,FirstD,SecondD>> list = this.data.toArrayList();	// loop over all entries
+		HashMap<SecondD,MyVector<FirstD,SecondD>> hm = new HashMap<SecondD,MyVector<FirstD,SecondD>>();
+		ArrayList<MyEntry<?,FirstD,SecondD>> list = this.toArrayList();	// loop over all entries
 		for (int i = 0; i < list.size(); i++){
 			// get the second dimension of the current entry
-			SecondD key = list.get(i).getSecondDimension();
+			SecondD key = ((MyEntry<?,FirstD,SecondD>)list.get(i)).getSecondDimension();
 			// if this object is not already contained in the hash add it as key to the hash plus a new vector 
 			if (!hm.containsKey(key)){
-				MyVector<Entry,FirstD,SecondD> vector = new MyVector<Entry,FirstD,SecondD>();
+				MyVector<FirstD,SecondD> vector = new MyVector<FirstD,SecondD>();
 				hm.put(key, vector);
 			}
 		}
@@ -101,30 +136,30 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		// put each of the entries into the vector corresponding to the second dimension
 		for (int i = 0; i < list.size(); i++){
 			SecondD key = list.get(i).getSecondDimension();
-			MyVector<Entry,FirstD,SecondD> vector = hm.get(key);
-			MyEntry<Entry,FirstD,SecondD> entry = list.get(i);
+			MyVector<FirstD,SecondD> vector = hm.get(key);
+			MyEntry<?,FirstD,SecondD> entry = list.get(i);
 			// the entries inside the vector are sorted by the first dimension
 			vector.add(entry.clone().setComparatorToFirstDimension());
 		}
 		
 		// create a set of vectors from hash, vectors are sorted by second dimension
-		MySet<MyVector<Entry,FirstD,SecondD>> vectors = new MySet<MyVector<Entry,FirstD,SecondD>>();
+		MySet<MyVector<FirstD,SecondD>> vectors = new MySet<MyVector<FirstD,SecondD>>();
 		Iterator<SecondD> iterator = hm.keySet().iterator();
 		while (iterator.hasNext()){
 			SecondD key = iterator.next();
-			MyVector<Entry,FirstD,SecondD> vector = hm.get(key);
+			MyVector<FirstD,SecondD> vector = hm.get(key);
 			vectors.add(vector.setComparatorToSecondDimension());
 		}
 		
 		// create a matrix of entries
-		ArrayList<MyVector<Entry,FirstD,SecondD>> vector_list = vectors.toArrayList();
+		ArrayList<MyVector<FirstD,SecondD>> vector_list = vectors.toArrayList();
 		int height = vector_list.get(0).size();
 		int width = vector_list.size();
 		this.matrix = new MyEntry[height][width];
 		
 		for (int j = 0; j < width; j++){
-			MyVector<Entry,FirstD,SecondD> vector = vector_list.get(j);
-			ArrayList<MyEntry<Entry,FirstD,SecondD>> entry_list = vector.toArrayList();
+			MyVector<FirstD,SecondD> vector = vector_list.get(j);
+			ArrayList<MyEntry<?,FirstD,SecondD>> entry_list = vector.toArrayList();
 			for (int i = 0; i < height; i++){
 				this.matrix[i][j] = entry_list.get(i);
 			}
@@ -132,24 +167,8 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	}
 	
 	private void check(){
-		if (this.matrix == null && this.data.size() > 0)
+		if (this.matrix == null && this.size() > 0)
 			this.makeMatrix();
-
-		if (super.getFirstDimensionSet() == null){
-			MySet<FirstD> first_dimension = new MySet<FirstD>();
-			for (int i = 0; i < this.matrix.length; i++)
-				first_dimension.add(this.matrix[i][0].getFirstDimension());
-
-			super.setFirstDimensionSet(first_dimension);
-		}
-		
-		if (super.getSecondDimensionSet() == null){
-			MySet<SecondD> second_dimension = new MySet<SecondD>();
-			for (int j = 0; j < this.matrix[0].length; j++)
-				second_dimension.add(this.matrix[0][j].getSecondDimension());
-
-			super.setSecondDimensionSet(second_dimension);
-		}
 	}
 	
 	/**
@@ -175,20 +194,34 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		
 		return ret;
 	}
-	
-	/**
-	 * Number of entries. 
-	 * 
-	 * @return number of entries.
-	 */
-	public int size(){
-		return this.data.size();
+
+	public MyMatrix<FirstD,FirstD> diag() throws Exception{
+		if (this.getWidth() > 1)
+			throw new Exception("not a column vector: height = " + this.getHeight() + ", width = " + this.getWidth());
+		
+		MyMatrix<FirstD,FirstD> ret = new MyMatrix<FirstD,FirstD>();
+		for (int i = 0; i < this.getHeight(); i++){
+			for (int j = 0; j < this.getHeight(); j++){
+				if (i == j){
+					ret.add(new MyDouble((Double)this.getEntry(i, 0).getEntry(), this.getFirstDimension(i), this.getFirstDimension(j)));
+				} else {
+					ret.add(new MyDouble(0.0, this.getFirstDimension(i), this.getFirstDimension(j)));	
+				}
+			}
+		}
+		
+		return ret;
 	}
 	
-	public Iterator<MyEntry<Entry,FirstD,SecondD>> iterator(){
-		return this.data.iterator();
+	public MyMatrix<FirstD,SecondD> getColumnAsMatrix(int j){
+		this.check();
+		
+		MyMatrix<FirstD,SecondD> ret = new MyMatrix<FirstD,SecondD>();
+		for (int i = 0; i < this.getHeight(); i++)
+			ret.add(this.getEntry(i, j).clone().setComparatorToFirstDimension());
+		
+		return ret;
 	}
-	
 	
 	/**
 	 * Gets a column.
@@ -197,10 +230,10 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * 
 	 * @return The column.
 	 */
-	public MyVector<Entry,FirstD,SecondD> getColumn(int j){
+	public MyVector<FirstD,SecondD> getColumn(int j){
 		this.check();
 		
-		MyVector<Entry,FirstD,SecondD> ret = new MyVector<Entry,FirstD,SecondD>();
+		MyVector<FirstD,SecondD> ret = new MyVector<FirstD,SecondD>();
 		for (int i = 0; i < this.getHeight(); i++)
 			ret.add(this.getEntry(i, j).clone().setComparatorToFirstDimension());
 		
@@ -214,11 +247,11 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * 
 	 * @return The column.
 	 */
-	public MyVector<Entry,FirstD,SecondD> getColumn(SecondD secondD){
-		MyVector<Entry,FirstD,SecondD> ret = new MyVector<Entry,FirstD,SecondD>();
-		Iterator<MyEntry<Entry,FirstD,SecondD>> entry_iterator = this.data.iterator();
+	public MyVector<FirstD,SecondD> getColumn(SecondD secondD){
+		MyVector<FirstD,SecondD> ret = new MyVector<FirstD,SecondD>();
+		Iterator<MyEntry<?,FirstD,SecondD>> entry_iterator = this.iterator();
 		while (entry_iterator.hasNext()){
-			MyEntry<Entry,FirstD,SecondD> entry = entry_iterator.next();
+			MyEntry<?,FirstD,SecondD> entry = entry_iterator.next();
 			
 			if (entry.getSecondDimension().equals(secondD))
 				ret.add(entry.clone().setComparatorToFirstDimension());
@@ -233,11 +266,11 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * @param column Column to set.
 	 * @param The column.
 	 */
-	public void setColumn(MyVector<Entry,FirstD,SecondD> column){
-		ArrayList<MyEntry<Entry,FirstD,SecondD>> list = column.toArrayList();
+	public void setColumn(MyVector<FirstD,SecondD> column){
+		ArrayList<MyEntry<?,FirstD,SecondD>> list = column.toArrayList();
 		
 		// bring the entries into the correct order
-		MyVector<Entry,FirstD,SecondD> vector = new MyVector<Entry,FirstD,SecondD>();
+		MyVector<FirstD,SecondD> vector = new MyVector<FirstD,SecondD>();
 		for (int i = 0; i < list.size(); i++)
 			vector.add(list.get(i).clone().setComparatorToFirstDimension());
 		
@@ -245,7 +278,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		this.removeColumn(column.getSecondDimension());
 		
 		// add new column
-		Iterator<MyEntry<Entry,FirstD,SecondD>> entry_iterator = column.iterator();
+		Iterator<MyEntry<?,FirstD,SecondD>> entry_iterator = column.iterator();
 		while (entry_iterator.hasNext())
 			this.add(entry_iterator.next());
 	}
@@ -257,15 +290,25 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 *
 	 */
 	public void removeColumn(SecondD secondD){
-		ArrayList<MyEntry<Entry,FirstD,SecondD>> entry_array = this.data.toArrayList();
+		ArrayList<MyEntry<?,FirstD,SecondD>> entry_array = this.toArrayList();
 		for (int i = 0; i < entry_array.size(); i++){
-			MyEntry<Entry,FirstD,SecondD> entry = entry_array.get(i);
+			MyEntry<?,FirstD,SecondD> entry = entry_array.get(i);
 			
 			if (entry.getSecondDimension().equals(secondD))
-				this.data.remove(entry);
+				this.remove(entry);
 		}
 		
 		this.matrix = null;
+	}
+	
+	public MyMatrix<FirstD,SecondD> getRowAsMatrix(int i){
+		this.check();
+		
+		MyMatrix<FirstD,SecondD> ret = new MyMatrix<FirstD,SecondD>();
+		for (int j = 0; j < this.getWidth(); j++)
+			ret.add(this.getEntry(i, j).clone().setComparatorToSecondDimension());
+		
+		return ret;
 	}
 	
 	/**
@@ -275,10 +318,10 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * 
 	 * @return The row.
 	 */
-	public MyVector<Entry,FirstD,SecondD> getRow(int i){
+	public MyVector<FirstD,SecondD> getRow(int i){
 		this.check();
 		
-		MyVector<Entry,FirstD,SecondD> ret = new MyVector<Entry,FirstD,SecondD>();
+		MyVector<FirstD,SecondD> ret = new MyVector<FirstD,SecondD>();
 		for (int j = 0; j < this.getWidth(); j++)
 			ret.add(this.getEntry(i, j).clone().setComparatorToSecondDimension());
 		
@@ -292,11 +335,11 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * 
 	 * @return The row.
 	 */
-	public MyVector<Entry,FirstD,SecondD> getRow(FirstD firstD){
-		MyVector<Entry,FirstD,SecondD> ret = new MyVector<Entry,FirstD,SecondD>();
-		Iterator<MyEntry<Entry,FirstD,SecondD>> entry_iterator = this.data.iterator();
+	public MyVector<FirstD,SecondD> getRow(FirstD firstD){
+		MyVector<FirstD,SecondD> ret = new MyVector<FirstD,SecondD>();
+		Iterator<MyEntry<?,FirstD,SecondD>> entry_iterator = this.iterator();
 		while (entry_iterator.hasNext()){
-			MyEntry<Entry,FirstD,SecondD> entry = entry_iterator.next();
+			MyEntry<?,FirstD,SecondD> entry = entry_iterator.next();
 			
 			if (entry.getFirstDimension().equals(firstD))
 			ret.add(entry.clone().setComparatorToSecondDimension());
@@ -311,11 +354,11 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * @param row Row to set.
 	 * @param The row.
 	 */
-	public void setRow(MyVector<Entry,FirstD,SecondD> row){
-		ArrayList<MyEntry<Entry,FirstD,SecondD>> list = row.toArrayList();
+	public void setRow(MyVector<FirstD,SecondD> row){
+		ArrayList<MyEntry<?,FirstD,SecondD>> list = row.toArrayList();
 		
 		// bring the entries into the correct order
-		MyVector<Entry,FirstD,SecondD> vector = new MyVector<Entry,FirstD,SecondD>();
+		MyVector<FirstD,SecondD> vector = new MyVector<FirstD,SecondD>();
 		for (int i = 0; i < list.size(); i++)
 			vector.add(list.get(i).clone().setComparatorToSecondDimension());
 		
@@ -323,7 +366,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		this.removeRow(row.getFirstDimension());
 		
 		// add new row
-		Iterator<MyEntry<Entry,FirstD,SecondD>> entry_iterator = row.iterator();
+		Iterator<MyEntry<?,FirstD,SecondD>> entry_iterator = row.iterator();
 		while (entry_iterator.hasNext())
 			this.add(entry_iterator.next());
 	}
@@ -335,27 +378,15 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 *
 	 */
 	public void removeRow(FirstD firstD){
-		ArrayList<MyEntry<Entry,FirstD,SecondD>> entry_array = this.data.toArrayList();
+		ArrayList<MyEntry<?,FirstD,SecondD>> entry_array = this.toArrayList();
 		for (int i = 0; i < entry_array.size(); i++){
-			MyEntry<Entry,FirstD,SecondD> entry = entry_array.get(i);
+			MyEntry<?,FirstD,SecondD> entry = entry_array.get(i);
 			
 			if (entry.getFirstDimension().equals(firstD))
-				this.data.remove(entry);
+				this.remove(entry);
 		}
 		
 		this.matrix = null;
-	}
-	
-	public MyEntry<Entry,FirstD,SecondD> getEntry(int i, int j){
-		this.check();
-		
-		return this.matrix[i][j];
-	}
-	
-	public void setEntry(int i, int j, MyEntry<Entry,FirstD,SecondD> entry){
-		this.check();
-		
-		this.matrix[i][j] = entry;
 	}
 	
 	/**
@@ -368,7 +399,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	public int getFirstDimensionIndex(FirstD fd){
 		this.check();
 		
-		return super.getFirstDimensionIndex(fd);
+		return this.getFirstDimensionSet().getIndex(fd);
 	}
 
 	/**
@@ -381,35 +412,23 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	public int getSecondDimensionIndex(SecondD sd){
 		this.check();
 		
-		return super.getSecondDimensionIndex(sd);
-	}
-	
-	public MySet<FirstD> getFirstDimensionSet(){
-		this.check();
-		
-		return super.getFirstDimensionSet();
-	}
-
-	public MySet<SecondD> getSecondDimensionSet(){
-		this.check();
-		
-		return super.getSecondDimensionSet();
+		return this.getSecondDimensionSet().getIndex(sd);
 	}
 	
 	public int getHeight(){
 		this.check();
 		
-		return super.getHeight();
+		return this.matrix.length;
 	}
 	
 	public int getWidth(){
 		this.check();
 		
-		return super.getWidth();
+		return this.matrix[0].length;
 	}
 	
-	public MyMatrix<Entry,FirstD,SecondD> getSubMatrix(int index_i, int index_j, int height, int width){
-		MyMatrix<Entry,FirstD,SecondD> ret = new MyMatrix<Entry,FirstD,SecondD>();
+	public MyMatrix<FirstD,SecondD> getSubMatrix(int index_i, int index_j, int height, int width){
+		MyMatrix<FirstD,SecondD> ret = new MyMatrix<FirstD,SecondD>();
 		
 		for (int i = index_i; i < index_i + height; i++){
 			for (int j = index_j; j < index_j + width; j++){
@@ -425,13 +444,13 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	//                                   Mathematical methods
 	// -------------------------------------------------------------------------------------------
 	
-	public MyMatrix<Entry,SecondD,FirstD> transpose(){
-		MyMatrix<Entry,SecondD,FirstD> ret = new MyMatrix<Entry,SecondD,FirstD>();
+	public MyMatrix<SecondD,FirstD> transpose(){
+		MyMatrix<SecondD,FirstD> ret = new MyMatrix<SecondD,FirstD>();
 		
-		Iterator<MyEntry<Entry,FirstD,SecondD>> iterator = this.data.iterator();
+		Iterator<MyEntry<?,FirstD,SecondD>> iterator = this.iterator();
 		while (iterator.hasNext()){
-			MyEntry<Entry,FirstD,SecondD> entry = iterator.next();
-			ret.add(entry.transpose());
+			MyEntry<?,FirstD,SecondD> entry = iterator.next();
+			ret.add(entry.transpose().setComparatorToFirstDimension());
 		}
 		
 		return ret;
@@ -460,10 +479,10 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * 
 	 * @return The resulting matrix.
 	 */
-	public MyMatrix<?, FirstD, ?> mul(MyMatrix<?, SecondD, ?> A) throws Exception{
+	public MyMatrix<FirstD, ?> mul(MyMatrix<SecondD, ?> A) throws Exception{
 		this.check();
 		
-		MyMatrix<?, FirstD, ?> ret = new MyMatrix();
+		MyMatrix<FirstD, ?> ret = new MyMatrix();
 		for (int k = 0; k < A.getWidth(); k++){
 			for (int i = 0; i < this.getHeight(); i++){
 				MyDouble sum = new MyDouble(new Double(0),this.getEntry(i, 0).getFirstDimension(),A.getEntry(0, k).getSecondDimension());
@@ -486,9 +505,9 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * 
 	 * @return The resulting matrix.
 	 */
-	public MyMatrix<?, FirstD, SecondD> round() throws Exception{
+	public MyMatrix<FirstD, SecondD> round() throws Exception{
 		// very ugly solved, the same holds for method mul, see the comment in MyEntry class. 
-		MyMatrix<?,FirstD,SecondD> ret = new MyMatrix();
+		MyMatrix<FirstD,SecondD> ret = new MyMatrix();
 		
 		for (int i = 0; i < this.getHeight(); i++){
 			for (int j = 0; j < this.getWidth(); j++){
@@ -499,17 +518,17 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		
 		return ret;
 	}
-	
+
 	/**
 	 * Computes the extreme rays of this MyMatrix object using polco.
 	 * 
 	 * @return The extreme rays of this matrix.
 	 * @throws Exception
 	 */
-	public MyMatrix<MyDouble<SecondD,?>,SecondD,?> getExtremeRays() throws Exception{
+	public MyMatrix<SecondD,?> getExtremeRays() throws Exception{
 		this.check();
 		
-		MyMatrix<Entry,SecondD, SecondD> I = this.getUnityMatrix();
+		MyMatrix<SecondD, SecondD> I = this.getUnityMatrix();
 		
 		double[][] eq = this.toDoubleMatrix();	//the coefficients of the system equalities
 		double[][] iq = I.toDoubleMatrix();		//the coefficients of the system inequalities
@@ -519,7 +538,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		PolcoAdapter polco = new PolcoAdapter(opts);
 		double[][] rays = polco.getDoubleRays(eq, iq);
 
-		MyMatrix<MyDouble<SecondD,?>,SecondD,?> ret = new MyMatrix();
+		MyMatrix<SecondD,?> ret = new MyMatrix();
 		
 		ArrayList<SecondD> secondD_array = this.getSecondDimensionSet().toArrayList();
 		for (int j = 0; j < rays[0].length; j++){
@@ -532,17 +551,17 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		return ret;
 	}
 	
-	public MyMatrix<Entry,SecondD,SecondD> getUnityMatrix(){
-		MyMatrix<Entry,SecondD,SecondD> ret = new MyMatrix<Entry,SecondD,SecondD>();
+	public MyMatrix<SecondD,SecondD> getUnityMatrix(){
+		MyMatrix<SecondD,SecondD> ret = new MyMatrix<SecondD,SecondD>();
 		ArrayList<SecondD> secondD_array = this.getSecondDimensionSet().toArrayList();
 		for (int i = 0; i < secondD_array.size(); i++){
 			for (int j = 0; j < secondD_array.size(); j++){
-				MyEntry<Entry,FirstD,SecondD> entry = this.data.head();
+				MyEntry<?,FirstD,SecondD> entry = this.head();
 				if (secondD_array.get(i).equals(secondD_array.get(j))){
-					MyEntry<Entry,SecondD,SecondD> new_entry = new MyEntry<Entry,SecondD,SecondD>(entry.getOne().getEntry(), secondD_array.get(i), secondD_array.get(j));
+					MyEntry<?,SecondD,SecondD> new_entry = new MyEntry(entry.getOne().getEntry(), secondD_array.get(i), secondD_array.get(j));
 					ret.add(new_entry);
 				} else {
-					MyEntry<Entry,SecondD,SecondD> new_entry = new MyEntry<Entry,SecondD,SecondD>(entry.getZero().getEntry(), secondD_array.get(i), secondD_array.get(j));
+					MyEntry<?,SecondD,SecondD> new_entry = new MyEntry(entry.getZero().getEntry(), secondD_array.get(i), secondD_array.get(j));
 					ret.add(new_entry);
 				}
 			}
@@ -554,15 +573,13 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	public double[][] toDoubleMatrix() throws Exception{
 		this.check();
 		
-		if (this.data.size() == 0 && super.toDoubleMatrix() != null)
-			return super.toDoubleMatrix();
-		else if (this.data.size() == 0 && super.toDoubleMatrix() == null)
+		if (this.size() == 0)
 			throw new Exception("No entries in matrix.");
 		
 		double[][] ret = new double[this.getHeight()][this.getWidth()];
 		for (int i = 0; i < this.getHeight(); i++){
 			for (int j = 0; j < this.getWidth(); j++){
-				Entry entry = this.getEntry(i, j).getEntry();
+				Object entry = this.getEntry(i, j).getEntry();
 				if (entry instanceof Integer)
 					ret[i][j] = ((Integer)this.getEntry(i, j).getEntry()).doubleValue();
 				else if (entry instanceof Double)
@@ -580,9 +597,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	public String toOctaveString() throws Exception{
 		this.check();
 		
-		if (this.data.size() == 0 && super.toDoubleMatrix() != null)
-			return super.toOctaveString();
-		else if (this.data.size() == 0 && super.toDoubleMatrix() == null)
+		if (this.size() == 0)
 			throw new Exception("No entries in matrix.");
 		
 		StringBuffer buffer = new StringBuffer("A = [\n");
@@ -627,7 +642,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * @return A MyMatrix object consisting of vectors whose span represents the kernel.
 	 * @throws Exception
 	 */
-	public MyMatrix<Double,SecondD,String> getKernelUsingOctave(String path) throws Exception{
+	public MyMatrix<SecondD,String> getKernelUsingOctave(String path) throws Exception{
 		MyOctaveKernel kernel = new MyOctaveKernel();
 		kernel.setProgramName("octave");
 		kernel.setProgramPath("");
@@ -640,7 +655,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		this.check();
 		MySet<SecondD> second_dimension = this.getSecondDimensionSet();
 		ArrayList<SecondD> sd_list = second_dimension.toArrayList();
-		MyMatrix<Double,SecondD,String> ret = new MyMatrix<Double,SecondD,String>();
+		MyMatrix<SecondD,String> ret = new MyMatrix<SecondD,String>();
 		for (int i = 0; i < matrix.length; i++){
 			for (int j = 0; j < matrix[i].length; j++){
 				MyDouble<SecondD,String> entry = new MyDouble<SecondD,String>(matrix[i][j], this.getSecondDimension(i), "kernel " + j);
@@ -660,7 +675,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 	 * @return A MyMatrix object representing the row reduced row echelon form.
 	 * @throws Exception
 	 */
-	public MyMatrix<Double,FirstD,SecondD> getRowReducedEchelonFormUsingOctave(String path) throws Exception{
+	public MyMatrix<FirstD,SecondD> getRowReducedEchelonFormUsingOctave(String path) throws Exception{
 		MyOctaveRref rref = new MyOctaveRref();
 		rref.setProgramName("octave");
 		rref.setProgramPath("");
@@ -671,7 +686,7 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		double[][] matrix = rref.parseOutputFile();
 		
 		this.check();
-		MyMatrix<Double,FirstD, SecondD> ret = new MyMatrix<Double,FirstD,SecondD>();
+		MyMatrix<FirstD, SecondD> ret = new MyMatrix<FirstD,SecondD>();
 		for (int i = 0; i < matrix.length; i++){
 			for (int j = 0; j < matrix[i].length; j++){
 				MyDouble<FirstD,SecondD> entry = new MyDouble<FirstD,SecondD>(matrix[i][j], this.getFirstDimension(i), this.getSecondDimension(j));
@@ -714,9 +729,5 @@ public class MyMatrix<Entry,FirstD,SecondD> extends MySimpleMatrix<FirstD,Second
 		if (sum < Math.pow(10, tolerance))
 			return true;
 		return false;
-	}
-	
-	public MySet<MyEntry<Entry,FirstD,SecondD>> getData(){
-		return this.data;
 	}
 }

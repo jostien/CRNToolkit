@@ -17,10 +17,16 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.graph;
 
 import java.util.HashMap;
 import java.util.Iterator;
+
+import math.set.MyMultiset;
+import math.set.MyPair;
+import math.set.MyPartition;
+import math.set.MySet;
+import miscellaneous.MyPriorityQueue;
 
 public class MyGraph<E>{
 	private MySet<MyEdge<E>> edges;

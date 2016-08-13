@@ -17,37 +17,42 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.set;
 
-public class MyPair<E,F> implements Comparable<MyPair<E,F>>{
-	private E first_element;
-	private F second_element;
+public class MyEquivalenceClass<E> extends MySet<E>{
+	/**
+	 * standard serial version UID
+	 */
+	private static final long serialVersionUID = 1L;
+	private MyEquivalenceRelation<E> equivalence_relation;
 	
-	public MyPair(E first_element, F second_element){
-		this.first_element = first_element;
-		this.second_element = second_element;
+	public MyEquivalenceClass(MyEquivalenceRelation<E> equivalence_relation){
+		this.equivalence_relation = equivalence_relation;
 	}
 	
-	public E getFirstElement(){
-		return this.first_element;
-	}
-	
-	public F getSecondElement(){
-		return this.second_element;
-	}
-	
-	public String toString(){
-		return "(" + this.first_element.toString() + ", " + this.second_element.toString() + ")";
-	}
+	public boolean add(E e){
+		if (this.isEmpty())
+			return super.add(e);
 
-	public int compareTo(MyPair<E, F> o) {
-		return this.toString().compareTo(((MyPair<E,F>)o).toString());
-	}
-	public boolean equals(Object o){
-		return this.toString().equals(((MyPair<E,F>)o).toString());
+		try {
+			if (this.equivalence_relation.isEqual(this.head(), e))
+				return super.add(e);
+		} catch(Exception ex){
+		}
+		
+		return false;
 	}
 	
-	public int hashCode(){
-		return this.toString().hashCode();
+	public boolean addAll(MyEquivalenceClass<E> equivalence_class){
+		if (this.isEmpty())
+			return super.addAll(equivalence_class);
+
+		try {
+			if (this.equivalence_relation.isEqual(this.head(), equivalence_class.head()))
+				return super.addAll(equivalence_class);
+		} catch(Exception ex){
+		}
+		
+		return false;
 	}
 }

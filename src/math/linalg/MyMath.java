@@ -17,9 +17,11 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.linalg;
 
 import java.math.BigInteger;
+
+import math.field.MyRationalNumber;
 
 /**
  * Class which implements some helpful mathematical tools. 

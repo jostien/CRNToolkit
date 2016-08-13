@@ -21,6 +21,10 @@
 package crnt;
 
 import java.util.*;
+
+import math.graph.MyEdge;
+import math.set.MyMultiset;
+import math.set.MySet;
 import miscellaneous.*;
 
 public class Reaction extends MyEdge<MyMultiset<Species>>{

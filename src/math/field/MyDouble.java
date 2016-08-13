@@ -18,7 +18,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.field;
 
 public class MyDouble<FirstD,SecondD> extends MyEntry<Double,FirstD,SecondD>{
 	public MyDouble(){
@@ -33,6 +33,42 @@ public class MyDouble<FirstD,SecondD> extends MyEntry<Double,FirstD,SecondD>{
 	}
 	
 	//--------------------------------------------------------------------
+	
+	public Boolean isEqual(Integer i){
+		return new Boolean(this.getDouble() == new Double(i));
+	}
+	
+	public Boolean isLess(Integer i){
+		return new Boolean(this.getDouble() < new Double(i));
+	}
+	
+	public Boolean isGreater(Integer i){
+		return new Boolean(this.getDouble() > new Double(i));
+	}
+	
+	public Boolean isEqual(Double d){
+		return new Boolean(this.getDouble() == d);
+	}
+	
+	public Boolean isLess(Double d){
+		return new Boolean(this.getDouble() < d);
+	}
+	
+	public Boolean isGreater(Double d){
+		return new Boolean(this.getDouble() > d);
+	}
+	
+	public Boolean isEqual(MyDouble<FirstD,SecondD> d){
+		return new Boolean(this.getDouble() == d.getDouble());
+	}
+	
+	public Boolean isLess(MyDouble<FirstD,SecondD> d){
+		return new Boolean(this.getDouble() < d.getDouble());
+	}
+	
+	public Boolean isGreater(MyDouble<FirstD,SecondD> d){
+		return new Boolean(this.getDouble() > d.getDouble());
+	}
 	
 	public Boolean isNumber(){
 		return new Boolean(true);

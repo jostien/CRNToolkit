@@ -17,7 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.graph;
 
 public class MyEdge<E> implements Comparable<MyEdge<E>>{
 	private MyNode<E> source;

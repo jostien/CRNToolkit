@@ -17,7 +17,7 @@
  * 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
  */
 
-package miscellaneous;
+package math.field;
 
 public class MyRational<FirstD,SecondD> extends MyEntry<MyRationalNumber,FirstD,SecondD>{
 	public MyRational(){
@@ -32,6 +32,42 @@ public class MyRational<FirstD,SecondD> extends MyEntry<MyRationalNumber,FirstD,
 	}
 	
 	//--------------------------------------------------------------------
+	
+	public Boolean isEqual(Integer i){
+		return new Boolean(this.getMyRationalNumber().getRatio() == i);
+	}
+	
+	public Boolean isLess(Integer i){
+		return new Boolean(this.getMyRationalNumber().getRatio() < i);
+	}
+	
+	public Boolean isGreater(Integer i){
+		return new Boolean(this.getMyRationalNumber().getRatio() > i);
+	}
+	
+	public Boolean isEqual(Double d){
+		return new Boolean(this.getMyRationalNumber().getRatio() == d);
+	}
+	
+	public Boolean isLess(Double d){
+		return new Boolean(this.getMyRationalNumber().getRatio() < d);
+	}
+	
+	public Boolean isGreater(Double d){
+		return new Boolean(this.getMyRationalNumber().getRatio() > d);
+	}
+	
+	public Boolean isEqual(MyRational<FirstD,SecondD> r){
+		return new Boolean(this.getMyRationalNumber().getRatio() == r.getMyRationalNumber().getRatio());
+	}
+	
+	public Boolean isLess(MyRational<FirstD,SecondD> r){
+		return new Boolean(this.getMyRationalNumber().getRatio() < r.getMyRationalNumber().getRatio());
+	}
+	
+	public Boolean isGreater(MyRational<FirstD,SecondD> r){
+		return new Boolean(this.getMyRationalNumber().getRatio() > r.getMyRationalNumber().getRatio());
+	}
 	
 	public Boolean isNumber(){
 		return new Boolean(true);
@@ -72,7 +108,7 @@ public class MyRational<FirstD,SecondD> extends MyEntry<MyRationalNumber,FirstD,
 	}
 	
 	//--------------------------------------------------------------------
-	//						MyRationalNum x MyInteger
+	//						MyRational x MyInteger
 	//--------------------------------------------------------------------
 	
 	public MyRational<FirstD,?> mul(MyInteger<SecondD,?> factor){
@@ -88,7 +124,7 @@ public class MyRational<FirstD,SecondD> extends MyEntry<MyRationalNumber,FirstD,
 	}
 	
 	//--------------------------------------------------------------------
-	//						MyRationalNum x MyRationalNum
+	//						MyRational x MyRationalNum
 	//--------------------------------------------------------------------
 	
 	public MyRational<FirstD,?> mul(MyRational<SecondD,?> factor){
@@ -100,7 +136,7 @@ public class MyRational<FirstD,SecondD> extends MyEntry<MyRationalNumber,FirstD,
 	}
 	
 	//--------------------------------------------------------------------
-	//						MyRationalNum x MyDouble
+	//						MyRational x MyDouble
 	//--------------------------------------------------------------------
 	
 	public MyDouble<FirstD,?> mul(MyDouble<SecondD,?> factor){

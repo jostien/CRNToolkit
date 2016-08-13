@@ -18,7 +18,7 @@ Introduction
 - reaction network: the tuple (S, C, R)
 
 - linkage class: set of connected components in reaction network, i.e., a set of complexes
-- strong linkage class: set of strongly connected components in reaction network, i.e. a set of complexes
+- strong linkage class: set of strongly connected components in reaction network, i.e., a set of complexes
 
 - linkage class partitions set of complexes <=> equivalence relation on complexes: those complexes are equivalent, which are elements of the same linkage class  
 - strong linkage class partitions set of complexes <=> equivalence relation on complexes: those complexes are equivalent, which are elements of the same strong linkage class

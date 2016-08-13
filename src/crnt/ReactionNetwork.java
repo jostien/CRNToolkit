@@ -24,6 +24,19 @@ import miscellaneous.*;
 
 import java.util.*;
 
+import math.field.MyDouble;
+import math.field.MyEntry;
+import math.field.MyInteger;
+import math.graph.MyConnectedComponents;
+import math.graph.MyGraph;
+import math.graph.MyNode;
+import math.graph.MyStronglyConnectedComponents;
+import math.linalg.MyMatrix;
+import math.linalg.MySimpleMatrix;
+import math.set.MyEquivalenceClass;
+import math.set.MyMultiset;
+import math.set.MyPartition;
+import math.set.MySet;
 import system.parsers.simple.SimpleParser;
 
 /**
@@ -38,12 +51,13 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	private MySet<Species> S;							// the set of species
 	private MyPartition<Complex> linkage_classes;			// the set of linkage classes
 	private MyPartition<Complex> strong_linkage_classes;	// the set of strong linkage classes
-	private MyMatrix<Double, Species, Complex> Y;
-	private MyMatrix<Integer, Complex, Reaction> Ia;
-	private MyMatrix<Double, Species, Reaction> N;
-	private MyMatrix<Integer, Complex, Complex> A;
-	private MyMatrix<Integer, Complex, MyEquivalenceClass<Complex>> L;
+	private MyMatrix<Species, Complex> Y;
+	private MyMatrix<Complex, Reaction> Ia;
+	private MyMatrix<Species, Reaction> N;
+	private MyMatrix<Complex, Complex> A;
+	private MyMatrix<Complex, MyEquivalenceClass<Complex>> L;
 	private MySet<String> compartments;
+	private MySimpleMatrix<Species, Reaction> simple_N;
 	
 	// each species can occur in many complexes as well as in many reactions, therefore, multiset counts how often a complex
 	// is used as substrate or product so that removal of a reaction decreases multiplicities of corresponding substrate and
@@ -276,7 +290,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	 * Creates Y matrix.
 	 */
 	public void makeYMatrix(){
-		this.Y = new MyMatrix<Double,Species,Complex>();
+		this.Y = new MyMatrix<Species,Complex>();
 		
 //		int c = 0;
 		Iterator<Complex> complex_iterator = this.getComplexes().iterator();
@@ -305,7 +319,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	 * Creates Ia matrix.
 	 */
 	public void makeIaMatrix(){
-		this.Ia = new MyMatrix<Integer,Complex,Reaction>();
+		this.Ia = new MyMatrix<Complex,Reaction>();
 		
 //		int c = 0;
 		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
@@ -339,7 +353,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	 * Creates N matrix. Very fast version.
 	 */
 	public void makeSimpleNMatrix(){
-		this.N = new MyMatrix<Double,Species,Reaction>(this.getSpecies(),this.getReactions());
+		this.simple_N = new MySimpleMatrix<Species,Reaction>(this.getSpecies(),this.getReactions());
 		
 		ArrayList<Species> species_array = this.getSpecies().toArrayList();
 		ArrayList<Reaction> reaction_array = this.getReactions().toArrayList();
@@ -360,7 +374,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 				else
 					entry = new Double(0);
 				
-				this.N.setSimpleEntry(i, j, entry);
+				this.simple_N.setSimpleEntry(i, j, entry);
 			}
 		}
 	}
@@ -369,7 +383,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	 * Creates N matrix. Fast version.
 	 */
 	public void makeNMatrix(){
-		this.N = new MyMatrix<Double,Species,Reaction>();
+		this.N = new MyMatrix<Species,Reaction>();
 		
 //		int c = 0;
 		Iterator<Reaction> reaction_iterator = this.getReactions().iterator();
@@ -386,13 +400,11 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 			while (species_iterator.hasNext()){
 				Species species = species_iterator.next();
 				
-				MyEntry<Double,Species,Reaction> entry;
+				MyDouble<Species,Reaction> entry;
 				if (difference.contains(species))
-					entry = new MyDouble<Species,Reaction>(difference.getNumberOfOccurences(species), species, reaction);
+					this.N.add(new MyDouble(difference.getNumberOfOccurences(species), species, reaction));
 				else
-					entry = new MyDouble<Species,Reaction>(new Double(0), species, reaction);
-				
-				this.N.add(entry);
+					this.N.add(new MyDouble(new Double(0), species, reaction));
 			}
 		}
 	}
@@ -401,7 +413,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		if (this.linkage_classes.size() == 0)
 			this.makeLinkageClasses();
 		
-		this.L = new MyMatrix<Integer, Complex, MyEquivalenceClass<Complex>>();
+		this.L = new MyMatrix<Complex, MyEquivalenceClass<Complex>>();
 		
 		Iterator<MyEquivalenceClass<Complex>> ec_iterator = this.linkage_classes.iterator();
 		while (ec_iterator.hasNext()){
@@ -423,9 +435,9 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	}
 
 	public void makeAMatrix() throws Exception{
-		this.A = new MyMatrix<Integer,Complex,Complex>();
+		this.A = new MyMatrix<Complex,Complex>();
 	
-		MyMatrix<Integer,Complex,Reaction> Ia = this.getIaMatrix();
+		MyMatrix<Complex,Reaction> Ia = this.getIaMatrix();
 		for (int j = 0; j < Ia.getWidth(); j++){
 			for (int i = 0; i < Ia.getHeight(); i++){
 				for (int k = i + 1; k < Ia.getHeight(); k++){
@@ -433,11 +445,11 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 					Complex complex2 = Ia.getEntry(k, j).getFirstDimension();
 					
 					MyInteger<Complex,Complex> entry;
-					if (Ia.getEntry(i, j).getEntry() < 0 &&	Ia.getEntry(k, j).getEntry() > 0){
+					if (Ia.getEntry(i, j).isLess(0) &&	Ia.getEntry(k, j).isGreater(0)){
 						entry = new MyInteger<Complex,Complex>(new Integer(1), complex1, complex2);
 						this.A.add(entry);
 					}
-					else if (Ia.getEntry(i, j).getEntry() > 0 &&	Ia.getEntry(k, j).getEntry() < 0){
+					else if (Ia.getEntry(i, j).isGreater(0) &&	Ia.getEntry(k, j).isLess(0)){
 						entry = new MyInteger<Complex,Complex>(new Integer(1), complex2, complex1);	
 						this.A.add(entry);
 					}
@@ -472,12 +484,12 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		return this.S;
 	}
 	
-	public MyMatrix<Double,Species,Reaction> getSimpleNMatrix() throws Exception{
+	public MySimpleMatrix<Species,Reaction> getSimpleNMatrix() throws Exception{
 		// very faster computation of stoichiometric matrix
-		if (this.N == null)
+		if (this.simple_N == null)
 			this.makeSimpleNMatrix();
 		
-		return this.N;
+		return this.simple_N;
 	}
 	
 	/**
@@ -485,7 +497,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	 * 
 	 * @return The stoichiometric matrix.
 	 */
-	public MyMatrix<Double,Species,Reaction> getNMatrix() throws Exception{
+	public MyMatrix<Species,Reaction> getNMatrix() throws Exception{
 		// faster computation of stoichiometric matrix
 		if (this.N == null)
 			this.makeNMatrix();
@@ -502,28 +514,28 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 //		return (MyMatrix<Integer, Species, Reaction>)(this.Y.mul(this.Ia)).round();
 	}
 	
-	public MyMatrix<Double, Species, Complex> getYMatrix(){
+	public MyMatrix<Species, Complex> getYMatrix(){
 		if (this.Y == null)
 			this.makeYMatrix();
 		
 		return this.Y;
 	}
 
-	public MyMatrix<Integer, Complex, Reaction> getIaMatrix(){
+	public MyMatrix<Complex, Reaction> getIaMatrix(){
 		if (this.Ia == null)
 			this.makeIaMatrix();
 		
 		return this.Ia;
 	}
 	
-	public MyMatrix<Integer, Complex, Complex> getAMatrix() throws Exception{
+	public MyMatrix<Complex, Complex> getAMatrix() throws Exception{
 		if (this.A == null)
 			this.makeAMatrix();
 		
 		return this.A;
 	}
 	
-	public MyMatrix<Integer, Complex, MyEquivalenceClass<Complex>> getLMatrix() throws Exception{
+	public MyMatrix<Complex, MyEquivalenceClass<Complex>> getLMatrix() throws Exception{
 		if (this.L == null)
 			this.makeLMatrix();
 		
