@@ -119,7 +119,7 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 			this.first_dimension_set.add(entry.getFirstDimension());
 			this.second_dimension_set.add(entry.getSecondDimension());
 		}
-		
+
 		// for the column vectors, accessed by the second dimension
 		HashMap<SecondD,MyVector<FirstD,SecondD>> hm = new HashMap<SecondD,MyVector<FirstD,SecondD>>();
 		ArrayList<MyEntry<?,FirstD,SecondD>> list = this.toArrayList();	// loop over all entries
@@ -444,13 +444,25 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 	//                                   Mathematical methods
 	// -------------------------------------------------------------------------------------------
 	
+	public MyMatrix<FirstD,SecondD> getMultiplicativeInverse(){
+		MyMatrix<FirstD,SecondD> ret = new MyMatrix<FirstD,SecondD>();
+		
+		Iterator<MyEntry<?,FirstD,SecondD>> iterator = this.iterator();
+		while (iterator.hasNext()){
+			MyEntry<?,FirstD,SecondD> entry = iterator.next();
+			ret.add(entry.getInverse());
+		}
+		
+		return ret;
+	}
+	
 	public MyMatrix<SecondD,FirstD> transpose(){
 		MyMatrix<SecondD,FirstD> ret = new MyMatrix<SecondD,FirstD>();
 		
 		Iterator<MyEntry<?,FirstD,SecondD>> iterator = this.iterator();
 		while (iterator.hasNext()){
 			MyEntry<?,FirstD,SecondD> entry = iterator.next();
-			ret.add(entry.transpose().setComparatorToFirstDimension());
+			ret.add(entry.transpose());//.setComparatorToFirstDimension());
 		}
 		
 		return ret;
