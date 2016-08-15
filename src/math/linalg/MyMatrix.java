@@ -512,6 +512,19 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 		return ret;
 	}
 	
+	public MyMatrix<SecondD,?> getOne() throws Exception{
+		MyMatrix<String,SecondD> ret = new MyMatrix();
+		
+		MyMatrix<FirstD,SecondD> first_row = this.getRowAsMatrix(0);
+		Iterator<MyEntry<?,FirstD,SecondD>> iterator = first_row.iterator();
+		while (iterator.hasNext()){
+			MyEntry<?,FirstD,SecondD> entry = iterator.next();
+			ret.add(new MyDouble(1.0, "one", entry.getSecondDimension()));
+		}
+		
+		return ret.transpose();
+	}
+	
 	/**
 	 * Rounds the entries in a MyMatrix object.
 	 * 
