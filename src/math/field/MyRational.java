@@ -89,6 +89,10 @@ public class MyRational<FirstD,SecondD> extends MyEntry<MyRationalNumber,FirstD,
 		return new MyRational<FirstD,SecondD>(new MyRationalNumber(1),this.getFirstDimension(),this.getSecondDimension());
 	}
 	
+	public MyRational<FirstD,SecondD> getInverse(){
+		return new MyRational<FirstD,SecondD>(new MyRationalNumber(this.getMyRationalNumber().getDenominator(),this.getMyRationalNumber().getNumerator()),this.getFirstDimension(),this.getSecondDimension());
+	}
+	
 	public MyInteger<FirstD,SecondD> floor(){
 		return new MyInteger<FirstD,SecondD>(new Integer(new Double(this.getMyRationalNumber().getRatio()).intValue()),this.getFirstDimension(),this.getSecondDimension());
 	}

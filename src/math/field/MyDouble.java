@@ -90,6 +90,10 @@ public class MyDouble<FirstD,SecondD> extends MyEntry<Double,FirstD,SecondD>{
 		return new MyDouble<FirstD,SecondD>(new Double(1),this.getFirstDimension(),this.getSecondDimension());
 	}
 	
+	public MyDouble<FirstD,SecondD> getInverse(){
+		return new MyDouble<FirstD,SecondD>(new Double(1.0/this.getDouble()),this.getFirstDimension(),this.getSecondDimension());
+	}
+	
 	public MyInteger<FirstD,SecondD> round(){
 		return new MyInteger<FirstD,SecondD>(new Integer(this.getDouble().intValue()),this.getFirstDimension(),this.getSecondDimension());
 	}
