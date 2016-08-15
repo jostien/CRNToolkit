@@ -220,6 +220,10 @@ public class MyEntry<Entry,FirstD,SecondD> implements Comparable<MyEntry<Entry,F
 		return null;
 	}
 
+	public MyEntry<Entry,FirstD,SecondD> getInverse(){
+		return null;
+	}
+	
 	public Boolean isNumber(){
 		return new Boolean(false);
 	}
