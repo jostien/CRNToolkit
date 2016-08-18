@@ -83,12 +83,26 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		Iterator<MyEquivalenceClass<Complex>> iterator = reaction_network.getLinkageClasses().iterator();
 		while (iterator.hasNext()){
 			MyEquivalenceClass<Complex> ec = iterator.next();
-			MySet<Complex> con = reaction_network.shortestPath(ecs1.toArrayList().get(0), ecs2.toArrayList().get(0), ec);
+			ReactionNetwork con = reaction_network.getShortestPathBetweenComplexSets(ecs1.toArrayList().get(0), ecs2.toArrayList().get(0), ec, true);
 			if (con != null)
 				System.out.println(ec.toString() + " is superset of " + ecs1.toArrayList().get(0).toString() + " and/or " + ecs2.toArrayList().get(0).toString() + ": " + con.toString());
 			else
 				System.out.println(ec.toString() + " is NOT superset of " + ecs1.toArrayList().get(0).toString() + " and/or " + ecs2.toArrayList().get(0).toString() + ": null");
 		}
+		System.out.println();
+		
+		reaction_network = (new SimpleParser()).parse(System.getProperty("user.dir") + "/examples/simple/Feinberg1995a_example_2.9");
+		System.out.println(reaction_network.toString());
+		
+		ReactionNetwork[] lcs = reaction_network.getLinkageClassesAsReactionNetworks();
+		for (int i = 0; i < lcs.length; i++)
+			System.out.println(lcs[i].toString());
+		System.out.println();
+
+		lcs = reaction_network.getStrongLinkageClassesAsReactionNetworks();
+		for (int i = 0; i < lcs.length; i++)
+			System.out.println(lcs[i].toString());
+		System.out.println();
 	}
 	
 	/**
@@ -239,6 +253,40 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 	}
 	
 	/**
+	 * Returns the array of reaction networks. Each network consists of the set of consuming
+	 * reactions belonging to the elements of the corresponding strong linkage class. Thus,
+	 * the resulting network may have terminal nodes.  
+	 * 
+	 * @return Array of reaction networks representing set of strong linkage classes.
+	 * @throws Exception
+	 */
+	public ReactionNetwork[] getStrongLinkageClassesAsReactionNetworks() throws Exception{
+		if (this.strong_linkage_classes.size() == 0)
+			this.makeStrongLinkageClasses();
+		
+		int c = 0;
+		ReactionNetwork[] ret = new ReactionNetwork[this.getStrongLinkageClasses().size()];
+		Iterator<MyEquivalenceClass<Complex>> iterator = this.getStrongLinkageClasses().iterator();
+		while (iterator.hasNext()){
+			MyEquivalenceClass<Complex> ec = iterator.next();
+			ReactionNetwork rn = new ReactionNetwork();
+			Iterator<Complex> complex_iterator = ec.iterator();
+			while (complex_iterator.hasNext()){
+				Complex complex = complex_iterator.next();
+				MySet<Reaction> reactions = (MySet)this.getEdgesOut(complex);
+				Iterator<Reaction> reaction_iterator = reactions.iterator();
+				while (reaction_iterator.hasNext()){
+					rn.addReaction(reaction_iterator.next());
+				}
+			}
+			ret[c] = rn;
+			c++;
+		}
+		
+		return ret;
+	}
+	
+	/**
 	 * Get the set of linkage classes.
 	 * 
 	 * @return The set of linkage classes.
@@ -248,6 +296,39 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 			this.makeLinkageClasses();
 		
 		return this.linkage_classes;
+	}
+	
+	/**
+	 * Returns the array of reaction networks. Each network consists of the set of consuming
+	 * reactions belonging to the elements of the corresponding linkage class.
+	 *  
+	 * @return Array of reaction networks representing set of linkage classes.
+	 * @throws Exception
+	 */
+	public ReactionNetwork[] getLinkageClassesAsReactionNetworks() throws Exception{
+		if (this.linkage_classes.size() == 0)
+			this.makeLinkageClasses();
+		
+		int c = 0;
+		ReactionNetwork[] ret = new ReactionNetwork[this.getLinkageClasses().size()];
+		Iterator<MyEquivalenceClass<Complex>> iterator = this.getLinkageClasses().iterator();
+		while (iterator.hasNext()){
+			MyEquivalenceClass<Complex> ec = iterator.next();
+			ReactionNetwork rn = new ReactionNetwork();
+			Iterator<Complex> complex_iterator = ec.iterator();
+			while (complex_iterator.hasNext()){
+				Complex complex = complex_iterator.next();
+				MySet<Reaction> reactions = (MySet)this.getEdgesOut(complex);
+				Iterator<Reaction> reaction_iterator = reactions.iterator();
+				while (reaction_iterator.hasNext()){
+					rn.addReaction(reaction_iterator.next());
+				}
+			}
+			ret[c] = rn;
+			c++;
+		}
+		
+		return ret;
 	}
 	
 	/**
@@ -862,7 +943,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		return true; // if all complexes which can be reached from inside this strong linkage class are elements of this strong linkage class, then this strong linkage class must be terminal
 	}
 	
-	public MySet<Complex> shortestPath(MySet<Complex> subset1, MySet<Complex> subset2, MySet<Complex> superset) throws Exception{
+	public ReactionNetwork getShortestPathBetweenComplexSets(MySet<Complex> subset1, MySet<Complex> subset2, MySet<Complex> superset, boolean directed) throws Exception{
 		if (!superset.containsAll(subset1) || !superset.containsAll(subset2))
 			return null;
 		
@@ -878,13 +959,27 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		this.addReaction(reaction1);
 		this.addReaction(reaction2);
 		
-		MySet<Complex> route = (MySet)this.dijkstra(source, sink);
-		route.remove(source);
-		route.remove(sink);
+		//System.out.println("creating: " + reaction1.toString());
+		//System.out.println("creating: " + reaction2.toString());
 		
+		ReactionNetwork ret = new ReactionNetwork();
+		MySet<Reaction> route = (MySet)this.dijkstra(source, sink, directed);
+
 		this.removeReaction(reaction1);
 		this.removeReaction(reaction2);
 		
-		return route;
+		if (route == null)
+			return ret;
+		
+		Iterator<Reaction> iterator = route.iterator();
+		while (iterator.hasNext()){
+			Reaction reaction = iterator.next();
+			if (!(reaction.equals(reaction1) || reaction.equals(reaction2)) &&							// we do not want helper reactions
+				!(subset1.contains(reaction.getSource()) && subset1.contains(reaction.getSink())) &&	// we do not want reactions from first set of reactions
+				!(subset2.contains(reaction.getSource()) && subset2.contains(reaction.getSink())))		// we do not want reactions from second set of reactions
+				ret.addReaction(reaction);
+		}
+		
+		return ret;
 	}
 }
