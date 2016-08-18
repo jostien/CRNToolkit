@@ -198,11 +198,13 @@ public class MySet<E> extends TreeSet<E> implements Comparable<MySet<E>> {
 	}
 	
 	public String toLaTeXString() throws Exception{
-		Class c = this.head().getClass();
 		Method m = null;
-		try{
-			m = c.getMethod("toLaTeXString");
-		} catch (NoSuchMethodException nsme){
+		if (this.size() > 0){
+			Class c = this.head().getClass();
+			try{
+				m = c.getMethod("toLaTeXString");
+			} catch (NoSuchMethodException nsme){
+			}
 		}
 				
 		Iterator<E> iterator = this.iterator();
@@ -210,7 +212,7 @@ public class MySet<E> extends TreeSet<E> implements Comparable<MySet<E>> {
 		while (iterator.hasNext()){
 			E e = iterator.next();
 
-			buffer = buffer.append((String)m.invoke(e, null)).append(" ");
+			buffer = buffer.append((String)m.invoke(e, new Object[]{})).append(" ");
 		}
 		if (buffer.length() > 1)
 			buffer.setLength(buffer.length() - 1);
