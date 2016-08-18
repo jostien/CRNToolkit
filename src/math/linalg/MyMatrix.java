@@ -639,6 +639,89 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 	}
 	
 	/**
+	 * Returns a string which can be used in LaTeX.
+	 * 
+	 * @param b If the column and row objects are to be printed.
+	 * 
+	 * @return The corresponding LaTeX string.
+	 * @throws Exception
+	 */
+	public String toLaTeXString(boolean b) throws Exception{
+		this.check();
+
+		Class cf = this.getSecondDimensionSet().head().getClass();
+		Method mf = null;
+		try{
+			mf = cf.getMethod("toLaTeXString");
+		} catch (NoSuchMethodException nsme){
+		}
+		
+		Class ce = this.getFirstDimensionSet().head().getClass();
+		Method me = null;
+		try{
+			me = ce.getMethod("toLaTeXString");
+		} catch (NoSuchMethodException nsme){
+		}
+		
+		StringBuffer buffer = new StringBuffer("matrix: \n");
+		
+		ArrayList<FirstD> array = this.getFirstDimensionSet().toArrayList();
+		for (int i = 0; i < this.getHeight(); i++){
+			for (int j = 0; j < this.getWidth(); j++){
+				if (this.getEntry(i, j).isLess(0))
+					buffer = buffer.append(this.getEntry(i, j).getEntry()).append(" & ");
+				else
+					buffer = buffer.append(" ").append(this.getEntry(i, j).getEntry()).append(" & ");
+			}
+			if (buffer.length() > 1)
+				buffer.setLength(buffer.length() - 2);
+			buffer = buffer.append("\\tabularnewline\n");
+		}
+		
+		buffer.append("\ncolumns: \n");
+		buffer.append("{");
+		if (this.getSecondDimensionSet().size() == this.getWidth() || b){
+			ArrayList<SecondD> farray = this.getSecondDimensionSet().toArrayList();
+			for (int j = 0; j < farray.size(); j++){
+				SecondD f = farray.get(j);
+				System.out.println(f.toString());
+				if (mf != null)
+					buffer.append((String)mf.invoke(f, new Object[]{})).append("} & {");
+				else
+					buffer.append(f.toString()).append("} & {");
+			}
+		} else
+			buffer.append("number of columns and column objects is different");
+		if (buffer.length() > 1)
+			buffer.setLength(buffer.length() - 4);
+		buffer.append("\n");
+		
+		buffer.append("\nrows: \n");
+		if (this.getFirstDimensionSet().size() == this.getHeight() || b){
+			ArrayList<FirstD> earray = this.getFirstDimensionSet().toArrayList();
+			for (int j = 0; j < earray.size(); j++){
+				FirstD e = earray.get(j);
+				if (me != null)
+					buffer.append((String)me.invoke(e, new Object[]{})).append("\\\\\n");
+				else
+					buffer.append(e.toString()).append("\\\\\n");
+			}
+		} else
+			buffer.append("number of rows and row objects is different");
+
+		return buffer.toString();
+	}
+	
+	/**
+	 * Returns a string which can be used in LaTeX.
+	 * 
+	 * @return The string which can be used in LaTeX.
+	 */
+	public String toLaTeXString() throws Exception{
+		return this.toLaTeXString(false);
+	}
+	
+	/**
 	 * Computes the rank using octave. Octave
 	 * must be installed for this method to work.
 	 * 
