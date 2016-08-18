@@ -22,6 +22,7 @@ package math.graph;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import crnt.Species;
 import math.set.MyMultiset;
 import math.set.MyPair;
 import math.set.MyPartition;
@@ -175,8 +176,8 @@ public class MyGraph<E>{
 		MyNode<E> sink = edge.getSink();
 		
 		// remove the neighbourhood references
-		this.forward_neighbours.get(source.toString()).remove(source);
-		this.backward_neighbours.get(sink.toString()).remove(sink);
+		this.forward_neighbours.get(source.toString()).remove(sink);
+		this.backward_neighbours.get(sink.toString()).remove(source);
 		
 		this.removeComplexReactionReferences(edge);
 		
@@ -227,10 +228,10 @@ public class MyGraph<E>{
 	}
 	
 	/**
-	 * Returns the set of reactions which consume given complex.
+	 * Returns the set of edges which point out of given node.
 	 * 
-	 * @param complex The complex.
-	 * @return The set of reactions consuming the complex.
+	 * @param complex The node.
+	 * @return The set of edges pointing out of given node.
 	 */
 	public MySet<MyEdge<E>> getEdgesOut(MyNode<E> node){
 		if (this.source_edges_lookup_table.containsKey(node.toString()))
@@ -240,10 +241,10 @@ public class MyGraph<E>{
 	}
 	
 	/**
-	 * Returns the set of reactions which consume the set of given complexes.
+	 * Returns the set of edges which point out of given nodes.
 	 * 
-	 * @param complexes Set of complexes.
-	 * @return The set of reactions consuming the given complexes.
+	 * @param complexes Set of nodes.
+	 * @return The set of edges pointing out of given nodes.
 	 */
 	public MySet<MyEdge<E>> getEdgesOut(MySet<? extends MyNode> nodes){
 		MySet<MyEdge<E>> ret = new MySet<MyEdge<E>>();
@@ -252,6 +253,37 @@ public class MyGraph<E>{
 		while (iterator.hasNext()){
 			MyNode<E> node = iterator.next();
 			ret = ret.union(this.source_edges_lookup_table.get(node.toString()));
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Returns the set of edges which point into given node.
+	 * 
+	 * @param node The node.
+	 * @return The set of edges which point into given node.
+	 */
+	public MySet<MyEdge<E>> getEdgesIn(MyNode<E> node){
+		if (this.sink_edges_lookup_table.containsKey(node.toString()))
+			return this.sink_edges_lookup_table.get(node.toString());
+		
+		return new MySet<MyEdge<E>>();
+	}
+	
+	/**
+	 * Returns the set of edges which point into given nodes.
+	 * 
+	 * @param nodes Set of nodes.
+	 * @return The set of nodes which point into given nodes.
+	 */
+	public MySet<MyEdge<E>> getEdgesIn(MySet<? extends MyNode> nodes){
+		MySet<MyEdge<E>> ret = new MySet<MyEdge<E>>();
+		
+		Iterator<? extends MyNode> iterator = nodes.iterator();
+		while (iterator.hasNext()){
+			MyNode<E> node = iterator.next();
+			ret = ret.union(this.sink_edges_lookup_table.get(node.toString()));
 		}
 		
 		return ret;
@@ -367,18 +399,164 @@ public class MyGraph<E>{
 //		return route;
 //	}
 	
+//	/**
+//	 * Computes shortest path between to complexes in reaction network.
+//	 * 
+//	 * @param source The source complex.
+//	 * @param sink The sink complex.
+//	 * @return MySet<Complex> containing the complexes between source and sink.
+//	 */
+//	public MySet<MyNode<E>> dijkstra(MyNode<E> source, MyNode<E> sink){
+//		MySet<MyNode<E>> nodes = this.getNodes();
+//		
+//		int[] dist = new int[nodes.size()];
+//		int[] prev = new int[nodes.size()];
+//		
+//		dist[nodes.getIndex(source)] = 0;
+//		MyPriorityQueue<MyNodeDistance> pq = new MyPriorityQueue<MyNodeDistance>();
+//		
+//		// fill priority queue
+//		for (int i = 0; i < nodes.size(); i++){
+//			if (i != nodes.getIndex(source)){
+//				dist[i] = Integer.MAX_VALUE;
+//				prev[i] = -1;
+//			}
+//			pq.add(new MyNodeDistance(nodes.toArrayList().get(i), dist[i]));
+//		}
+//		
+//		// traverse graph, collect distances, precursors and update queue
+//		while (pq.size() > 0){
+//			MyNodeDistance cd = pq.poll();
+//			MyNode<E> u = (MyNode<E>)cd.getFirstElement();
+//			if (u.equals(sink))
+//				break;
+//			
+//			MySet<MyNode<E>> neighbours = this.getNodeNeighboursForwardBackward(u);
+//			Iterator<MyNode<E>> iterator = neighbours.iterator();
+//			while (iterator.hasNext()){
+//				MyNode<E> v = iterator.next();
+//				int alt = dist[nodes.getIndex(u)] + 1;
+//				if (alt < dist[nodes.getIndex(v)]){
+//					// save data about old pair
+//					MyNodeDistance cd_rm = new MyNodeDistance(v, dist[nodes.getIndex(v)]);
+//
+//					// update data
+//					dist[nodes.getIndex(v)] = alt;
+//					prev[nodes.getIndex(v)] = nodes.getIndex(u);
+//					
+//					// remove old pair and insert updated pair
+//					pq.remove(cd_rm);
+//					pq.add(new MyNodeDistance(v, alt));
+//				}
+//			}
+//		}
+//
+//		MySet<MyNode<E>> route = new MySet<MyNode<E>>();
+//		MyNode<E> node = sink;
+//		route.add(node);
+//		while (!node.equals(source)){
+//			if (prev[nodes.getIndex(node)] < 0)
+//				return null;
+//			
+//			node = nodes.toArrayList().get(prev[nodes.getIndex(node)]);
+//			route.add(node);
+//		}
+//		return route;
+//	}
+	
 	/**
-	 * Computes shortest path between to complexes in reaction network.
+	 * Computes shortest path between to nodes.
 	 * 
-	 * @param source The source complex.
-	 * @param sink The sink complex.
-	 * @return MySet<Complex> containing the complexes between source and sink.
+	 * @param source The source node.
+	 * @param sink The sink node.
+	 * @param directed If false, graph is treated as being an undirected graph. 
+	 * @return MySet<MyEdge<E>> The set containing the edges between source and sink.
 	 */
-	public MySet<MyNode<E>> dijkstra(MyNode<E> source, MyNode<E> sink){
+	public MySet<MyEdge<E>> dijkstra(MyNode<E> source, MyNode<E> sink, boolean directed) throws Exception{
+	MySet<MyNode<E>> nodes = this.getNodes();
+	
+	int[] dist = new int[nodes.size()];
+	int[] prev = new int[nodes.size()];
+	
+	dist[nodes.getIndex(source)] = 0;
+	MyPriorityQueue<MyNodeDistance> pq = new MyPriorityQueue<MyNodeDistance>();
+	
+	// fill priority queue
+	for (int i = 0; i < nodes.size(); i++){
+		if (i != nodes.getIndex(source)){
+			dist[i] = Integer.MAX_VALUE;
+			prev[i] = -1;
+		}
+		pq.add(new MyNodeDistance(nodes.toArrayList().get(i), dist[i]));
+	}
+	
+	// traverse graph, collect distances, precursors and update queue
+	while (pq.size() > 0){
+		MyNodeDistance cd = pq.poll();
+		MyNode<E> u = (MyNode<E>)cd.getFirstElement();
+		if (u.equals(sink))
+			break;
+		
+		MySet<MyNode<E>> neighbours = null;
+		if (directed)
+			neighbours = this.getNodeNeighboursForward(u);
+		else
+			neighbours = this.getNodeNeighboursForwardBackward(u);
+		
+		Iterator<MyNode<E>> iterator = neighbours.iterator();
+		while (iterator.hasNext()){
+			MyNode<E> v = iterator.next();
+			int alt = dist[nodes.getIndex(u)] + 1;
+			if (alt < dist[nodes.getIndex(v)]){
+				// save data about old pair
+				MyNodeDistance cd_rm = new MyNodeDistance(v, dist[nodes.getIndex(v)]);
+
+				// update data
+				dist[nodes.getIndex(v)] = alt;
+				prev[nodes.getIndex(v)] = nodes.getIndex(u);
+				
+				// remove old pair and insert updated pair
+				pq.remove(cd_rm);
+				pq.add(new MyNodeDistance(v, alt));
+			}
+		}
+	}
+
+	MySet<MyEdge<E>> route = new MySet<MyEdge<E>>();
+	MyNode<E> sink_ = sink;
+	System.out.println(sink_.toString());
+	while (!sink_.equals(source)){
+		if (prev[nodes.getIndex(sink_)] < 0)
+			return null;
+		
+		MyNode<E> source_ = nodes.toArrayList().get(prev[nodes.getIndex(sink_)]);
+		
+		MySet<MyEdge<E>> going_out = this.getEdgesOut(source_);
+		MySet<MyEdge<E>> going_in  = this.getEdgesIn(sink_);
+		
+		MySet<MyEdge<E>> edge = going_in.intersection(going_out);
+		if (edge.size() == 0)
+			throw new Exception("there is something wrong: intersection of edges is empty");
+		
+		sink_ = source_;
+		route.add(edge.head());
+	}
+	return route;
+}
+	
+	/**
+	 * Computes shortest path between to nodes. Alternative version.
+	 * 
+	 * @param source The source node.
+	 * @param sink The sink node.
+	 * @param directed If false, graph is treated as being an undirected graph. 
+	 * @return MySet<MyEdge<E>> The set containing the edges between source and sink.
+	 */
+	public MySet<MyEdge<E>> dijkstra2(MyNode<E> source, MyNode<E> sink, boolean directed) throws Exception{
 		MySet<MyNode<E>> nodes = this.getNodes();
 		
 		int[] dist = new int[nodes.size()];
-		int[] prev = new int[nodes.size()];
+		MyEdge<E>[] prev = new MyEdge[nodes.size()];
 		
 		dist[nodes.getIndex(source)] = 0;
 		MyPriorityQueue<MyNodeDistance> pq = new MyPriorityQueue<MyNodeDistance>();
@@ -387,7 +565,7 @@ public class MyGraph<E>{
 		for (int i = 0; i < nodes.size(); i++){
 			if (i != nodes.getIndex(source)){
 				dist[i] = Integer.MAX_VALUE;
-				prev[i] = -1;
+				prev[i] = null;
 			}
 			pq.add(new MyNodeDistance(nodes.toArrayList().get(i), dist[i]));
 		}
@@ -399,10 +577,16 @@ public class MyGraph<E>{
 			if (u.equals(sink))
 				break;
 			
-			MySet<MyNode<E>> neighbours = this.getNodeNeighboursForwardBackward(u);
-			Iterator<MyNode<E>> iterator = neighbours.iterator();
+			MySet<MyEdge<E>> connecting_edges = null;
+			if (directed)
+				connecting_edges = this.getEdgesOut(u);
+			else
+				connecting_edges = this.getEdgesOut(u).union(this.getEdgesIn(u));
+			
+			Iterator<MyEdge<E>> iterator = connecting_edges.iterator();
 			while (iterator.hasNext()){
-				MyNode<E> v = iterator.next();
+				MyEdge<E> edge = iterator.next();
+				MyNode<E> v = edge.getSink();
 				int alt = dist[nodes.getIndex(u)] + 1;
 				if (alt < dist[nodes.getIndex(v)]){
 					// save data about old pair
@@ -410,7 +594,7 @@ public class MyGraph<E>{
 
 					// update data
 					dist[nodes.getIndex(v)] = alt;
-					prev[nodes.getIndex(v)] = nodes.getIndex(u);
+					prev[nodes.getIndex(v)] = edge;
 					
 					// remove old pair and insert updated pair
 					pq.remove(cd_rm);
@@ -419,16 +603,18 @@ public class MyGraph<E>{
 			}
 		}
 
-		MySet<MyNode<E>> route = new MySet<MyNode<E>>();
-		MyNode<E> node = sink;
-		route.add(node);
-		while (!node.equals(source)){
-			if (prev[nodes.getIndex(node)] < 0)
+		MySet<MyEdge<E>> route = new MySet<MyEdge<E>>();
+		MyNode<E> sink_ = sink;
+		while (!sink_.equals(source)){
+			if (prev[nodes.getIndex(sink_)] == null)
 				return null;
 			
-			node = nodes.toArrayList().get(prev[nodes.getIndex(node)]);
-			route.add(node);
+			MyEdge<E> edge = prev[nodes.getIndex(sink_)];
+			route.add(edge);
+			
+			sink_ = edge.getSource();
 		}
+		
 		return route;
 	}
 	
