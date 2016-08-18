@@ -45,4 +45,4 @@ Requirements
 
 - [JSBML](http://sbml.org/Software/JSBML) for parsing SBML-files
 
-- [Singular](https://www.singular.uni-kl.de/) (optional but the corresponding methods won't work)
+- [Singular](https://www.singular.uni-kl.de/) (optional, but without Singular, the corresponding methods won't work)
