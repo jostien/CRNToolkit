@@ -119,11 +119,13 @@ public class MyMultiset<E> implements Comparable<MyMultiset<E>>{
 	}
 	
 	public String toLaTeXString() throws Exception{
-		Class c = this.multiset.head().getClass();
 		Method m = null;
-		try{
-			m = c.getMethod("toLaTeXString");
-		} catch (NoSuchMethodException nsme){
+		if (this.size() > 0){
+			Class c = this.multiset.head().getClass();
+			try{
+				m = c.getMethod("toLaTeXString");
+			} catch (NoSuchMethodException nsme){
+			}
 		}
 				
 		Iterator<E> iterator = this.multiset.iterator();
@@ -132,9 +134,9 @@ public class MyMultiset<E> implements Comparable<MyMultiset<E>>{
 			E e = iterator.next();
 			
 			if (this.occurences.get(e) > 1)
-				buffer = buffer.append(this.occurences.get(e)).append(" ").append((String)m.invoke(e, null)).append(" + ");
+				buffer = buffer.append(this.occurences.get(e)).append(" ").append((String)m.invoke(e, new Object[]{})).append(" + ");
 			else 
-				buffer = buffer.append((String)m.invoke(e, null)).append(" + ");
+				buffer = buffer.append((String)m.invoke(e, new Object[]{})).append(" + ");
 		}
 		if (buffer.length() > 1)
 			buffer.setLength(buffer.length() - 3);
