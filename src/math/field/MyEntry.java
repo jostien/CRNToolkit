@@ -51,6 +51,14 @@ public class MyEntry<Entry,FirstD,SecondD> implements Comparable<MyEntry<Entry,F
 		return this.second_dimension;
 	}
 	
+	public void setFirstDimension(FirstD first_dimension){
+		this.first_dimension = first_dimension;
+	}
+	
+	public void setSecondDimension(SecondD second_dimension){
+		this.second_dimension = second_dimension;
+	}
+	
 	public MyEntry<Entry,FirstD,SecondD> setComparatorToGeneral(){
 		this.comparator = 0;
 		
