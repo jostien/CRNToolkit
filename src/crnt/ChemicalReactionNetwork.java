@@ -174,7 +174,11 @@ public class ChemicalReactionNetwork extends ReactionNetwork{
 			Polynomial polynomial = new Polynomial(species_array.get(i).getName());
 			for (int j = 0; j < N.getWidth(); j++){
 				if (!N.getEntry(i, j).isZero()){
-					int coeff = ((Integer)N.getEntry(i, j).getEntry()).intValue();
+					int coeff = -1;
+					if (N.getEntry(i, j).getEntry() instanceof Integer)
+						coeff = ((Integer)N.getEntry(i, j).getEntry()).intValue();
+					if (N.getEntry(i, j).getEntry() instanceof Double)
+						coeff = ((Double)N.getEntry(i, j).getEntry()).intValue();
 					
 					Monomial monomial = fluxes.get(j).clone();
 					monomial.setCoefficient(coeff);
