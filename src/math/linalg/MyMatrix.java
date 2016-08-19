@@ -89,7 +89,10 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 	public void setEntry(int i, int j, MyEntry<?,FirstD,SecondD> entry){
 		this.check();
 		
-		this.matrix[i][j] = entry;
+		this.remove(this.matrix[i][j].setComparatorToGeneral());
+		this.add(entry);
+		
+		this.makeMatrix();	// slow
 	}
 	
 	public FirstD getFirstDimension(int i){
@@ -120,9 +123,29 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 			this.second_dimension_set.add(entry.getSecondDimension());
 		}
 
+		// create lookup table for entries already in list
+		HashMap<String,String> keys = new HashMap<String,String>();
+		ArrayList<MyEntry<?,FirstD,SecondD>> list = this.toArrayList();	// loop over all entries
+		for (int i = 0; i < list.size(); i++)
+			keys.put("(" + list.get(i).getFirstDimension() + ", " + list.get(i).getSecondDimension() + ")", "foo");
+		
+		MyEntry<?,FirstD,SecondD> zero = this.head().getZero();	// get the zero element from first entry
+		for (int i = 0; i < this.first_dimension_set.size(); i++){	// loop over first dimension
+			for (int j = 0; j < this.second_dimension_set.size(); j++){	// loop over second dimension
+				// create key for this potential entry
+				String key = "(" + this.first_dimension_set.toArrayList().get(i) + ", " + this.second_dimension_set.toArrayList().get(j) + ")";
+				if (!keys.containsKey(key)){	// if key is not in lookup table, then insert a corresponding zero element
+					MyEntry<?,FirstD,SecondD> zero_ = zero.clone();	// make a copy of the zero element and set dimensions correspondingly
+					zero_.setFirstDimension(this.first_dimension_set.toArrayList().get(i));
+					zero_.setSecondDimension(this.second_dimension_set.toArrayList().get(j));
+					this.add(zero_);
+				}
+			}
+		}
+		
 		// for the column vectors, accessed by the second dimension
 		HashMap<SecondD,MyVector<FirstD,SecondD>> hm = new HashMap<SecondD,MyVector<FirstD,SecondD>>();
-		ArrayList<MyEntry<?,FirstD,SecondD>> list = this.toArrayList();	// loop over all entries
+		list = this.toArrayList();	// loop over all entries
 		for (int i = 0; i < list.size(); i++){
 			// get the second dimension of the current entry
 			SecondD key = ((MyEntry<?,FirstD,SecondD>)list.get(i)).getSecondDimension();
@@ -506,6 +529,20 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 					sum = (MyDouble)this.invokeMethod(sum, new Object[]{result}, "add");
 				}
 				ret.add(sum);
+			}
+		}
+	
+		return ret;
+	}
+	
+	public MyMatrix<FirstD, SecondD> mul(double x) throws Exception{
+		this.check();
+		
+		MyMatrix<FirstD, SecondD> ret = new MyMatrix();
+		for (int i = 0; i < this.getHeight(); i++){
+			for (int j = 0; j < this.getWidth(); j++){
+				MyEntry<?,FirstD,SecondD> entry = this.getEntry(i, j);
+				ret.add(new MyDouble(x*(Double)entry.getEntry(), entry.getFirstDimension(), entry.getSecondDimension()));
 			}
 		}
 	
