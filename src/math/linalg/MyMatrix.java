@@ -72,10 +72,14 @@ public class MyMatrix<FirstD,SecondD> extends MySet<MyEntry<?,FirstD,SecondD>>{
 	}
 	
 	public MySet<FirstD> getFirstDimensionSet(){
+		this.check();
+		
 		return this.first_dimension_set;
 	}
 	
 	public MySet<SecondD> getSecondDimensionSet(){
+		this.check();
+		
 		return this.second_dimension_set;
 	}
 	
