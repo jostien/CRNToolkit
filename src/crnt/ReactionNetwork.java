@@ -28,6 +28,7 @@ import math.field.MyDouble;
 import math.field.MyEntry;
 import math.field.MyInteger;
 import math.graph.MyConnectedComponents;
+import math.graph.MyEdge;
 import math.graph.MyGraph;
 import math.graph.MyNode;
 import math.graph.MyStronglyConnectedComponents;
@@ -131,7 +132,7 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		reaction = (Reaction)this.getEdge(reaction);
 	
 		this.getSpecies().addAll(reaction.getSubstrate().getSpecies());	// add all species of the substrate complex to the set of species
-		this.getSpecies().addAll(reaction.getProduct().getSpecies());		// add all species of the substrate complex to the set of species
+		this.getSpecies().addAll(reaction.getProduct().getSpecies());	// add all species of the substrate complex to the set of species
 
 		// add compartments of substrates
 		Iterator<Species> species_iterator = reaction.getSubstrate().getObject().iterator();
@@ -326,6 +327,32 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 			}
 			ret[c] = rn;
 			c++;
+		}
+		
+		return ret;
+	}
+	
+	/**
+	 * Returns the subnetwork corresponding to the reactions adjacent to the given complexes.
+	 * (Not clear why I cannot use the corresponding method from MyGraph, compiler complains)
+	 * 
+	 * @param complexes Set of complexes.
+	 * @return The resulting subnetwork.
+	 */
+	public ReactionNetwork getComplexesAsReactionNetwork(MySet<Complex> complexes) throws Exception{
+		ReactionNetwork ret = new ReactionNetwork();
+		
+		Iterator<Complex> iterator = this.getComplexes().iterator();
+		while (iterator.hasNext()){
+			Complex complex = iterator.next();
+			MySet<Reaction> reactions = (MySet)this.getEdges(complex);
+			Iterator<Reaction> iter = reactions.iterator();
+			while (iter.hasNext()){
+				Reaction reaction = iter.next();
+				if (complexes.contains(reaction.getSubstrate()) && complexes.contains(reaction.getProduct())){
+					ret.addReaction(reaction);
+				}
+			}
 		}
 		
 		return ret;
