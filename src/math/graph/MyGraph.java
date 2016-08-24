@@ -364,6 +364,31 @@ public class MyGraph<E>{
 		return forwards.union(backwards);
 	}
 	
+	/**
+	 * Returns the subgraph corresponding to the edges adjacent to the given nodes.
+	 * 
+	 * @param nodes Set of nodes.
+	 * @return The resulting subgraph.
+	 */
+	public MyGraph<E> getNodesAsGraph(MySet<MyNode<E>> nodes){
+		MyGraph<E> ret = new MyGraph<E>();
+		
+		Iterator<MyNode<E>> iterator = nodes.iterator();
+		while (iterator.hasNext()){
+			MyNode<E> node = iterator.next();
+			MySet<MyEdge<E>> edges = this.getEdges(node);
+			Iterator<MyEdge<E>> iter = edges.iterator();
+			while (iter.hasNext()){
+				MyEdge<E> edge = iter.next();
+				if (nodes.contains(edge.getSink()) && nodes.contains(edge.getSource())){
+					ret.addEdge(edge);
+				}
+			}
+		}
+		
+		return ret;
+	}
+	
 //	/**
 //	 * Computes the shortest path between two subnetworks.
 //	 * 
