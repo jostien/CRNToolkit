@@ -79,6 +79,12 @@ public class MyMultiset<E> implements Comparable<MyMultiset<E>>{
 		return this;
 	}
 	
+	public void addAll(Collection<E> collection){
+		Iterator<E> iterator = collection.iterator();
+		while (iterator.hasNext())
+			this.add(iterator.next());
+	}
+	
 	public Double size(){
 		Double ret = 0.0;
 		
