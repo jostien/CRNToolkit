@@ -489,6 +489,24 @@ public class MyGraph<E>{
 //		return route;
 //	}
 	
+	public int diameter() throws Exception{
+		MySet<MyNode<E>> nodes = this.getNodes();
+		
+		int max_d = -1;
+		for (int i = 0; i < nodes.size(); i++){
+			MyNode<E> node_i = nodes.toArrayList().get(i);
+			for (int j = i + 1; j < nodes.size(); j++){
+				MyNode<E> node_j = nodes.toArrayList().get(j);
+				
+				int d = this.dijkstra(node_i, node_j, false).size();
+				if (d > max_d)
+					max_d = d;
+			}
+		}
+		
+		return max_d;
+	}
+	
 	/**
 	 * Computes shortest path between to nodes.
 	 * 
@@ -547,17 +565,24 @@ public class MyGraph<E>{
 		}
 	}
 
+	// backtracking
 	MySet<MyEdge<E>> route = new MySet<MyEdge<E>>();
 	MyNode<E> sink_ = sink;
-	System.out.println(sink_.toString());
 	while (!sink_.equals(source)){
 		if (prev[nodes.getIndex(sink_)] < 0)
 			return null;
 		
 		MyNode<E> source_ = nodes.toArrayList().get(prev[nodes.getIndex(sink_)]);
 		
-		MySet<MyEdge<E>> going_out = this.getEdgesOut(source_);
-		MySet<MyEdge<E>> going_in  = this.getEdgesIn(sink_);
+		MySet<MyEdge<E>> going_out = null;
+		MySet<MyEdge<E>> going_in  = null;
+		if (directed){
+			going_out = this.getEdgesOut(source_);
+			going_in  = this.getEdgesIn(sink_);
+		} else {
+			going_out = this.getEdges(source_);
+			going_in  = this.getEdges(sink_);
+		}
 		
 		MySet<MyEdge<E>> edge = going_in.intersection(going_out);
 		if (edge.size() == 0)
