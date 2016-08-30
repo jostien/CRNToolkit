@@ -82,24 +82,24 @@ public class Species implements Comparable<Object>{
 		return this.compartment;
 	}
 	
-	public int compareTo(Object o){
-		return this.id.compareTo(((Species)o).getId());
-	}
-	
 	public String toString(){
 		return this.id;
 	}
 	
 	public String toLaTeXString(){
-		return "\\text{" + this.id + "}";
+		return "\\text{" + this.toString() + "}";
 	}
 	
+	public int compareTo(Object o){
+		return this.toString().compareTo(((Species)o).getId());
+	}
+		
 	public int hashCode(){
-		return this.id.hashCode();
+		return this.toString().hashCode();
 	}
 	
 	public boolean equals(Object o){
-		return this.id.equals(((Species)o).getId());
+		return this.toString().equals(((Species)o).getId());
 	}
 	
 	public Species clone(){
