@@ -24,7 +24,7 @@ Requirements
 Description
 -----------
 # Introduction
-Since CRNT can be described mainly using sets (see [CRNT](http://www.jeremy-gunawardena.com/papers/crnt.pdf)) so that most statements can easily and understandable be given with a small set of variables like y, y' for complexes, or c, c' for concentration vectors. Thus, it makes sense to represent those objects via a programming language (here java). Some objects from CRNT:
+Chemical Reaction Network Theory (CRNT) can be described mainly using sets (see [CRNT](http://www.jeremy-gunawardena.com/papers/crnt.pdf)) so that most statements can easily and understandable be given with a small set of variables like y, y' for complexes, or c, c' for concentration vectors. Thus, it makes sense to represent those objects via a programming language (here java). Some objects from CRNT:
 - species: some thing, e.g., A, B or C
 - complex: a multiset of species, e.g., {}, {A}, {2B} or {B,C}
 - S: the set of species, e.g., S := {A, B, C}
