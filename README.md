@@ -48,14 +48,14 @@ Class derived from MyMultiset:
 - Complex
 
 # The MyEntry class and its subclasses
-The MyEntry class serves as starting point for MyMatrix (see below) entries. Different fields are derived from it, e.g., the MyInteger class (integers), the MyRational class (rational numbers), and the MyDouble class (real numbers). Each entry has two additional data fields associated with rows and columns, respectively. These fields describe the corresponding dimension, i.e., from which space the rows (or the columns) come from.
+The MyEntry class serves as starting point for MyMatrix entries (see below). Different fields are derived from it, e.g., the MyInteger class (integers), the MyRational class (rational numbers), and the MyDouble class (real numbers). Each entry has two additional data fields associated with: a "vertical" field and a "horizontal" field. These two fields describe the corresponding dimension, i.e., from which spaces the entry comes from (see MyMatrix class). That is, an entry is somehow analogous to a matrix of dimension 1 x 1.
 
 # The MyMatrix class
-Also the MyMatrix class is derived from MySet. Its entries are its elements. Entries should be derived from MyEntry. Since MyMatrix is also a TreeSet, its computation slows down for larger matrices significantly. E.g.
+Also the MyMatrix class is derived from MySet. Its entries are its elements. Entries should be derived from MyEntry. As a result, the elements of a MyMatrix object define the ordering of its rows and columns due to the vertical and horizontal fields. Thus, the sets of vertical and horizontal fields describe from which space the rows (or the columns) come from. Missing entries a filled in automatically always resulting in a MyMatrix object, which contains n x m elements for n different vertical fields and m different horizontal fields. The matrix form is then automatically and internally computed when an entry is accessed. Since MyMatrix is also a TreeSet, its computation slows down significantly for larger matrices. E.g.
 - the stoichiometric matrix N (with m = # of species rows and r = # of reactions columns) is a linear mapping from reaction space to species space and, thus, the rows are labeled with the corresponding species objects whereas the columns are labeled with the corresponding reaction objects;
 - the matrix Y (with m = # of species rows and n = # of complexes columns) is a linear mapping from complex space to species space and, thus, the rows are labeled with the corresponding species objects whereas the columns are labeled with the corresponding complex objects.
 
-This is quite convenient since it automatically associates the corresponding object with a row or column, especially, since this information is printed out by the toString()-method.
+This is quite convenient since it automatically associates the corresponding object with a row or column, especially, since this information is also printed out by the toString()-method.
 
 # The MyGraph class
 The MyGraph class is intended to encapsulate all graph related code. Associated to it are the MyNode and MyEdge class.
