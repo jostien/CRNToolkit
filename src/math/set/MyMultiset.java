@@ -85,6 +85,15 @@ public class MyMultiset<E> implements Comparable<MyMultiset<E>>{
 			this.add(iterator.next());
 	}
 	
+	public void addAll(MyMultiset<E> multiset){
+		Iterator<E> iterator = multiset.iterator();
+		while (iterator.hasNext()){
+			E e = iterator.next();
+			
+			this.add(e, multiset.getNumberOfOccurences(e));
+		}
+	}
+	
 	public Double size(){
 		Double ret = 0.0;
 		
