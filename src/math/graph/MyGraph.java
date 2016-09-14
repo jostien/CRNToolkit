@@ -22,6 +22,7 @@ package math.graph;
 import java.util.HashMap;
 import java.util.Iterator;
 
+import crnt.Complex;
 import crnt.Species;
 import math.set.MyMultiset;
 import math.set.MyPair;
@@ -666,6 +667,49 @@ public class MyGraph<E>{
 		}
 		
 		return route;
+	}
+	
+	public MySet<MyNode<E>> extend(MyNode<E> node, int diameter){
+		MySet<MyNode<E>> ret = new MySet<MyNode<E>>();
+		
+		this.depthFirstSearch(node, ret, 0, diameter);
+		
+		return ret;
+	}
+	
+	public boolean isNodeSetsNeighbours(MySet<MyNode<E>> nodes1, MySet<MyNode<E>> nodes2, int diameter){
+		for (int i = 0; i < nodes1.size(); i++){
+			MyNode<E> node = nodes1.toArrayList().get(i);
+			MySet<MyNode<E>> neighbourhood = (MySet<MyNode<E>>)this.extend(node, diameter);
+			
+			MySet<MyNode<E>> intersection = neighbourhood.intersection(nodes2);
+			if (intersection.size() > 0)
+				return true;
+		}
+		
+		return false;
+	}
+	
+	/**
+	 * Walks recursively along the edges of the graph.
+	 * 
+	 * @param node The current node which is to be analyzed.
+	 * @param ret The already touched nodes.
+	 */
+	public void depthFirstSearch(MyNode<E> node, MySet<MyNode<E>> ret, int current_depth, int max_depth){
+		if (current_depth <= max_depth){
+			ret.add(node);
+
+			// get all untouched neighbours of this reaction
+			MySet<MyNode<E>> neighbours = this.getNodeNeighboursForwardBackward(node).difference(ret);		
+			while (neighbours.size() > 0){						// as long as there is a neighbour which was not yet touched
+				MyNode<E> head_of_neighbours = neighbours.head();	// get the first neighbour
+				neighbours.remove(head_of_neighbours);			// remove it from the neighbours list
+		
+				// walk along the edges of the graph
+				depthFirstSearch(head_of_neighbours, ret, current_depth + 1, max_depth);
+			}
+		}
 	}
 	
 	public String toString(){
