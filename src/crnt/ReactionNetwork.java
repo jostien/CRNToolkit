@@ -120,6 +120,14 @@ public class ReactionNetwork extends MyGraph<MyMultiset<Species>>{
 		this.species_complex_map = new HashMap<String, MyMultiset<Complex>>();
 	}
 	
+	public void addReactions(MySet<Reaction> reactions){
+		Iterator<Reaction> reaction_iterator = reactions.iterator();
+		while (reaction_iterator.hasNext()){
+			Reaction reaction = reaction_iterator.next();
+			this.addReaction(reaction);
+		}
+	}
+	
 	/**
 	 * Adds a reaction to the reaction network.
 	 * 
