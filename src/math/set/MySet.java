@@ -337,4 +337,8 @@ public class MySet<E> extends TreeSet<E> implements Comparable<MySet<E>> {
 		for (int i = 0; i < this.element_array_list.size(); i++)
 			this.element_indices.put(this.element_array_list.get(i).toString(), new Integer(i));
 	}
+	
+	public boolean isEmpty(){
+		return this.size() == 0;
+	}
 }

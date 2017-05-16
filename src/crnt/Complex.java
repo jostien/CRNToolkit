@@ -52,7 +52,7 @@ public class Complex extends MyNode<MyMultiset<Species>>{
 	
 	public Complex addSpecies(Species species, double occurences){
 		if (!species.getName().equals("0")){
-			this.getObject().add(species);
+			this.getObject().add(species, occurences);
 		}
 		
 		return this;

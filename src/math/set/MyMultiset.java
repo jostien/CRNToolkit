@@ -111,6 +111,10 @@ public class MyMultiset<E> implements Comparable<MyMultiset<E>>{
 		return this.multiset.size();
 	}
 	
+	public boolean isEmpty(){
+		return this.numberOfDistinctElements() == 0;
+	}
+	
 	public Object[] getListOfDistinctElements(){
 		return this.multiset.toArray();
 	}
